@@ -9,7 +9,7 @@
  * 사용처 : app/my/reservations/page.tsx
  * ----------------------------------------------------------------------------------
  * [연관]
- * - Spring: GET /api/routes/sessions/detail?userId=&from=&to=  (세션+좌표)
+ * - Spring: GET /api/routes/sessions/detail?from=&to=  (세션+좌표, userId는 JWT에서 획득)
  * - Spring: GET /api/stay/accommodations/{id}                  (숙소 좌표)
  * - Polyline은 @vis.gl에 컴포넌트가 없어 useMap()+google.maps.Polyline으로 그림
  * ==================================================================================

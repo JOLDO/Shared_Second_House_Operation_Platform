@@ -39,7 +39,7 @@ class GlobalChatbotFab {
                 if (open) return const SizedBox.shrink();
                 return Positioned(
                   right: 16,
-                  bottom: 24,
+                  bottom: 75,
                   child: SafeArea(child: _ChatbotButton()),
                 );
               },
