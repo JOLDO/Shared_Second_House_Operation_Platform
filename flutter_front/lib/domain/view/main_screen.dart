@@ -2,7 +2,7 @@
  * ==================================================================================
  * [파일 정보]
  * 위치  : lib/domain/view/main_screen.dart
- * 역할  : 앱 메인 화면 — 홈 탭 / 내 예약 탭 / AI 챗봇 탭을 IndexedStack으로 관리
+ * 역할  : 앱 메인 화면 — 홈 탭 / 내 예약 탭 / AI 챗봇 탭 / 마이페이지 탭을 IndexedStack으로 관리
  * 사용처 : app_router.dart → '/' 루트
  * ----------------------------------------------------------------------------------
  * [연관 파일]
@@ -11,6 +11,7 @@
  * - stay_reservation_calendar_screen.dart : 구독 카드 "예약하기" 탭 시 이동
  * - stay_my_reservation_screen.dart       : BottomNavigationBar [내 예약] 탭
  * - guest_chat_bot_screen.dart            : BottomNavigationBar [AI 챗봇] 탭
+ * - mypage_screen.dart                    : BottomNavigationBar [마이페이지] 탭
  * ----------------------------------------------------------------------------------
  * [홈 탭 구성]
  * ① 내 구독 숙소 섹션
@@ -43,8 +44,11 @@ import 'package:flutter_front/domain/view/stay_accommodation_list_screen.dart';
 import 'package:flutter_front/domain/view/stay_reservation_calendar_screen.dart';
 import 'package:flutter_front/domain/view/stay_my_reservation_screen.dart';
 import 'package:flutter_front/domain/view/guest_chat_bot_screen.dart';
+import 'package:flutter_front/features/mypage/screen/mypage_screen.dart'; // 추가
 // TODO: [개발 완료 시 삭제]
 import 'package:flutter_front/domain/view/dev_screen_links.dart';
+
+import 'delivery_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -243,8 +247,9 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: [
           _buildHomeScaffold(ctrl),
-          const StayMyReservationScreen(),
-          const GuestChatBotScreen(),
+          // const GuestChatBotScreen(),
+          const DeliveryScreen(),
+          const MyPageScreen(), // 추가
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -262,19 +267,68 @@ class _MainScreenState extends State<MainScreen> {
             label: '홈',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month_outlined),
-            activeIcon: Icon(Icons.calendar_month),
-            label: '내 예약',
+            icon: Icon(Icons.delivery_dining),
+            activeIcon: Icon(Icons.delivery_dining),
+            label: '배달',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.smart_toy_outlined),
-            activeIcon: Icon(Icons.smart_toy),
-            label: 'AI 챗봇',
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.person_outline),
+          //   activeIcon: Icon(Icons.person),
+          //   label: '내 정보',
+          // ),
+          BottomNavigationBarItem( // 추가
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: '마이페이지',
           ),
         ],
       ),
     );
   }
+
+  // TODO: 내 정보 담당 멤버가 이 메서드를 자신의 화면으로 교체
+  // Widget _buildMyPageScaffold() => Scaffold(
+  //   backgroundColor: AppColors.background,
+  //   appBar: AppBar(
+  //     title: const Text('내 정보', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+  //     centerTitle: true,
+  //     backgroundColor: AppColors.primary,
+  //     elevation: 0,
+  //     automaticallyImplyLeading: false,
+  //   ),
+  //   body: const Center(
+  //     child: Column(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         Icon(Icons.person_outline, size: 56, color: AppColors.textHint),
+  //         SizedBox(height: 16),
+  //         Text('마이페이지 준비 중', style: TextStyle(fontSize: 15, color: AppColors.textSecondary)),
+  //       ],
+  //     ),
+  //   ),
+  // );
+
+  // TODO: 배달 팀원이 이 메서드를 자신의 화면으로 교체
+  // // Widget _buildDeliveryScaffold() => Scaffold(
+  //   backgroundColor: AppColors.background,
+  //   appBar: AppBar(
+  //     title: const Text('배달', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+  //     centerTitle: true,
+  //     backgroundColor: AppColors.primary,
+  //     elevation: 0,
+  //     automaticallyImplyLeading: false,
+  //   ),
+  //   body: const Center(
+  //     child: Column(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         Icon(Icons.delivery_dining, size: 56, color: AppColors.textHint),
+  //         SizedBox(height: 16),
+  //         Text('배달 서비스 준비 중', style: TextStyle(fontSize: 15, color: AppColors.textSecondary)),
+  //       ],
+  //     ),
+  //   ),
+  // );
 
   Widget _buildHomeScaffold(StayAccommodationController ctrl) {
     return Scaffold(
@@ -299,8 +353,8 @@ class _MainScreenState extends State<MainScreen> {
       body: ctrl.isLoadingList
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : ctrl.errorMessage != null
-              ? Center(child: Text(ctrl.errorMessage!, style: const TextStyle(color: AppColors.danger)))
-              : _buildBody(ctrl),
+          ? Center(child: Text(ctrl.errorMessage!, style: const TextStyle(color: AppColors.danger)))
+          : _buildBody(ctrl),
     );
   }
 
@@ -324,9 +378,30 @@ class _MainScreenState extends State<MainScreen> {
 
           // 내 구독 숙소 섹션 (ACTIVE만 표시)
           if (subscribedAccommodations.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('내 구독 숙소', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text('내 구독 숙소', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/my/subscriptions'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Row(
+                      children: [
+                        Text('전체보기', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        Icon(Icons.chevron_right, size: 18),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             // const SizedBox(height: 12),
             if (pendingCount > 0)
@@ -436,7 +511,7 @@ class _MainScreenState extends State<MainScreen> {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: item.firstImageUrl != null
                   ? Image.network(item.firstImageUrl!, height: fullWidth ? 180 : 130, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) => _imagePlaceholder(height: fullWidth ? 180 : 130))
+                  errorBuilder: (context, error, stack) => _imagePlaceholder(height: fullWidth ? 180 : 130))
                   : _imagePlaceholder(height: fullWidth ? 180 : 130),
             ),
             Padding(
@@ -518,7 +593,7 @@ class _MainScreenState extends State<MainScreen> {
                 children: [
                   item.firstImageUrl != null
                       ? Image.network(item.firstImageUrl!, height: 130, width: double.infinity, fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _imagePlaceholder())
+                      errorBuilder: (context, error, stackTrace) => _imagePlaceholder())
                       : _imagePlaceholder(),
                   Positioned(
                     left: 10, bottom: 8,

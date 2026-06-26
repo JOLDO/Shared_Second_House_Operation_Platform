@@ -36,8 +36,8 @@ class _CartScreenState extends State<CartScreen> {
 
     // 통신 실패 시 백엔드 DTO 규칙(카멜 케이스)과 싱크를 맞춘 안전망 더미 데이터
     return [
-      {"productId": 3, "name": "유기농 조식 바구니", "price": 25000, "quantity": 1},
-      {"productId": 5, "name": "감성 불멍 장작 세트", "price": 15000, "quantity": 2},
+      {"id": 3, "name": "[시그니처] 대나무 바베큐 플래터", "price": 45000, "img": "bbq.jpg"},
+      {"id": 5, "name": "콜라 / 사이다 500ml캔", "price": 2500, "img": "drink.jpg"},
     ];
   }
 

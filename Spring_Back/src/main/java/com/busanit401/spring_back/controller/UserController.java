@@ -24,6 +24,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -128,9 +129,9 @@ public class UserController {
      * 회원 탈퇴
      */
     @DeleteMapping
-    public ResponseEntity<String> deleteUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<?> deleteUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
         userService.deleteUser(userDetails.getId());
-        return ResponseEntity.ok("User Deleted successfully");
+        return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다."));
     }
 
     /**
@@ -144,6 +145,15 @@ public class UserController {
     @PostMapping("/kakao-login")
     public ResponseEntity<?> loginWithKakao(@RequestBody UserInfo userInfo, HttpServletResponse response) {
         return handleSocialLogin(userInfo, response);
+    }
+
+    /**
+     * 이메일로 가입 여부 확인 (소셜 로그인 신규/기존 분기용)
+     */
+    @GetMapping("/exists")
+    public ResponseEntity<?> checkEmailExists(@RequestParam String email) {
+        boolean exists = userService.existsByEmail(email);
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
 
     /**
@@ -177,7 +187,7 @@ public class UserController {
 
     private ResponseEntity<?> handleSocialLogin(UserInfo userInfo, HttpServletResponse response) {
         try {
-            CustomUserDetails userDetails = (CustomUserDetails) customUserDetailsService.loadUserByUsername(userInfo.getEmail());
+            CustomUserDetails userDetails = (CustomUserDetails) customUserDetailsService.loadUserByUsername(userInfo.getUsername());
             User user = userDetails.getUser();
 
             if (user.getRole() == Role.SOCIAL) {

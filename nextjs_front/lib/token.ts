@@ -7,8 +7,10 @@ export const tokenStorage = {
   },
   set: (token: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    window.dispatchEvent(new Event("auth-change"));
   },
   remove: () => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
+    window.dispatchEvent(new Event("auth-change"));
   },
 };

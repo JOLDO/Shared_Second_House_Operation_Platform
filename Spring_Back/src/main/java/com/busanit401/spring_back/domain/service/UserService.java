@@ -121,4 +121,8 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
     }
+
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
 }

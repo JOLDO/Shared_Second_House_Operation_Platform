@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class User extends BaseTimeEntity {
     @Column(name = "nick_name", nullable = false, unique = true)
     private String nickname;
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = true)
     private String phoneNumber;
 
 
@@ -68,10 +69,10 @@ public class User extends BaseTimeEntity {
     }
 
 
-    public static User from(SocialUserRequest userRequest) {
+    public static User from(SocialUserRequest userRequest, BCryptPasswordEncoder passwordEncoder) {
         return User.builder()
                 .username(userRequest.getUsername())
-                .password(userRequest.getPassword())
+                .password(passwordEncoder.encode(userRequest.getPassword()))
                 .nickname(userRequest.getNickname())
                 .email(userRequest.getEmail())
                 .role(Role.SOCIAL)

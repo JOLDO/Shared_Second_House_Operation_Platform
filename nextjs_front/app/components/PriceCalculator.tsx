@@ -21,7 +21,7 @@
  */
 
 import styles from './PriceCalculator.module.css';
-import { MONTH_OPTIONS } from '@/app/lib/constants';
+import { MONTH_OPTIONS, TEAM_OPTIONS } from '@/app/lib/constants';
 
 interface PriceCalculatorProps {
   teams: number;
@@ -48,9 +48,9 @@ export default function PriceCalculator({
           value={teams}
           onChange={(e) => onTeamsChange(Number(e.target.value))}
         >
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
-            <option key={n} value={n}>
-              {n} 팀
+          {TEAM_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>

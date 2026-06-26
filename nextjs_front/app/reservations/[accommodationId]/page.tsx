@@ -87,14 +87,19 @@ export default function ReservationPage() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [reservedDates, setReservedDates] = useState<Date[]>([]);
-  const [subscription, setSubscription] = useState<SubscriptionDto | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionDto | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
 
   const [userId, setUserId] = useState<number | null>(null);
 
   // 예약 데이터 fetch (실시간 갱신을 위해 함수로 분리)
   const fetchReservations = useCallback(() => {
-    api.get<ReservationDto[]>(`/api/stay/reservations/accommodation/${accommodationId}`)
+    api
+      .get<ReservationDto[]>(
+        `/api/stay/reservations/accommodation/${accommodationId}`
+      )
       .then((reservationsData) => {
         console.log('[ReservationPage] 예약 데이터 갱신:', reservationsData);
         const dates: Date[] = [];
@@ -114,17 +119,24 @@ export default function ReservationPage() {
         setStartDate(null);
         setEndDate(null);
       })
-      .catch((err) => console.log('[ReservationPage] 예약 데이터 갱신 실패:', err));
+      .catch((err) =>
+        console.log('[ReservationPage] 예약 데이터 갱신 실패:', err)
+      );
   }, [accommodationId]);
 
   // 초기 로딩 (userId 획득 → 구독 + 예약 데이터 병렬 조회)
   useEffect(() => {
-    api.get<UserResp>('/api/users')
+    api
+      .get<UserResp>('/api/users')
       .then((userData) => {
         setUserId(userData.userId);
         return Promise.all([
-          api.get<SubscriptionDto[]>(`/api/subscriptions/my/${userData.userId}`),
-          api.get<ReservationDto[]>(`/api/stay/reservations/accommodation/${accommodationId}`),
+          api.get<SubscriptionDto[]>(
+            `/api/subscriptions/my/${userData.userId}`
+          ),
+          api.get<ReservationDto[]>(
+            `/api/stay/reservations/accommodation/${accommodationId}`
+          ),
         ]);
       })
       .then(([subscriptionData, reservationsData]) => {
@@ -133,7 +145,9 @@ export default function ReservationPage() {
 
         const activeSubscription = Array.isArray(subscriptionData)
           ? subscriptionData.find(
-              (s) => s.status === 'ACTIVE' && s.accommodationId === Number(accommodationId)
+              (s) =>
+                s.status === 'ACTIVE' &&
+                s.accommodationId === Number(accommodationId)
             )
           : null;
         setSubscription(activeSubscription ?? null);
@@ -192,7 +206,9 @@ export default function ReservationPage() {
     const dayBefore = new Date(nextBlocked);
     dayBefore.setDate(dayBefore.getDate() - 1);
 
-    return dayBefore.getTime() < baseMaxDate.getTime() ? dayBefore : baseMaxDate;
+    return dayBefore.getTime() < baseMaxDate.getTime()
+      ? dayBefore
+      : baseMaxDate;
   }, [startDate, reservedDates, baseMaxDate]);
 
   // 시작일 선택 후 연박 불가 여부
@@ -214,14 +230,18 @@ export default function ReservationPage() {
 
     console.log('[ReservationPage] 예약 생성 요청:', body);
 
-    api.post<unknown>(`/api/stay/reservations`, body)
+    api
+      .post<unknown>(`/api/stay/reservations`, body)
       .then((data) => {
         console.log('[ReservationPage] 예약 생성 완료:', data);
         alert('예약이 완료됐어요!');
         router.push('/my/reservations');
       })
       .catch((err) => {
-        const msg = err instanceof Error ? err.message : '예약에 실패했어요. 다시 시도해주세요.';
+        const msg =
+          err instanceof Error
+            ? err.message
+            : '예약에 실패했어요. 다시 시도해주세요.';
         console.log('[ReservationPage] 예약 생성 실패:', err);
         alert(msg);
         // 실패 시 달력 즉시 갱신 (다른 사용자가 먼저 예약한 경우 반영)
@@ -236,11 +256,11 @@ export default function ReservationPage() {
       <h1 className={styles.title}>예약하기</h1>
 
       {/* 기본 안내 */}
-      {!startDate && (
-        <p className={styles.calendarHint}>
-          시작일을 먼저 선택해주세요. 회색 날짜는 이미 예약된 날짜입니다.
-        </p>
-      )}
+      {/* {!startDate && ( */}
+      <p className={styles.calendarHint}>
+        시작일을 먼저 선택해주세요. 회색 날짜는 이미 예약된 날짜입니다.
+      </p>
+      {/* )} */}
 
       {/* 연박 불가 안내 */}
       {noEndDateAvailable && (

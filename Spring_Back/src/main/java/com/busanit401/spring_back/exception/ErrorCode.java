@@ -26,6 +26,7 @@ public enum ErrorCode {
     ALREADY_PROCESSED(HttpStatus.BAD_REQUEST, "S003", "이미 처리된 초대입니다."),
     DUPLICATE_MEMBER(HttpStatus.CONFLICT, "S004", "이미 초대된 멤버입니다."),
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "S005", "다음 유저를 찾을 수 없습니다: "),
+    SUBSCRIPTION_DATE_CONFLICT(HttpStatus.CONFLICT, "S006", "선택한 구독 기간에 이미 다른 구독이 존재합니다."),
 
     // Payment
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "결제 정보를 찾을 수 없습니다."),

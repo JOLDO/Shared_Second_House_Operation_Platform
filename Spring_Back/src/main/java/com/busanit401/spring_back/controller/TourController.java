@@ -2,8 +2,11 @@ package com.busanit401.spring_back.controller;
 
 import com.busanit401.spring_back.domain.service.TourService;
 import com.busanit401.spring_back.dto.TourDto;
+import com.busanit401.spring_back.dto.TourResponseListDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,29 +14,55 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController // JSON 형태로 데이터를 반환하는 REST API 컨트롤러 선언
-@RequestMapping("/api/tours") // 이 컨트롤러의 모든 API 기본 주소 경로 설정
+@RequestMapping("/api/tours") // 이 컨트롤러의 모든 API 기본 주소 경로 설정 (/api/tours)
 @RequiredArgsConstructor
 public class TourController {
 
     private final TourService tourService;
 
+    /**
+     * 💡 Next.js 프런트엔드 규격에 맞춰 마지막 페이지 여부(isLast)와 데이터(tours)를 응답할 객체
+     */
+    @Getter
+    @AllArgsConstructor
+    public static class TourServerResponse {
+        private List<TourDto> tours;
+        private boolean isLast;
+    }
+
+    /**
+     * 특정 지역 코드 기반으로 관광지 리스트를 페이징 조회하는 API Endpoint
+     * URL: GET http://localhost:8080/api/tours?lDongRegnCd=26&pageNo=1
+     */
     @GetMapping
-    @Operation(summary = "지역별 카테고리 맞춤 관광지 리스트 10개씩 조회")
-    public ResponseEntity<List<TourDto>> getToursByRegion(
-            @Parameter(description = "법정동 시도 코드 (부산: 26, 인천: 28 등)", required = true)
-            @RequestParam("lDongRegnCd") String lDongRegnCd,
+    @Operation(summary = "관광지 리스트 조회", description = "지역 코드와 페이지 번호를 받아 관광지 목록과 마지막 페이지 여부를 반환합니다.")
+    public ResponseEntity<TourServerResponse> getTourList(
+            @Parameter(description = "법정동 시도 코드 (예: 부산=26)") @RequestParam("lDongRegnCd") String lDongRegnCd,
+            @Parameter(description = "조회할 페이지 번호") @RequestParam(value = "pageNo", defaultValue = "1") int pageNo) {
 
-            @Parameter(description = "요청할 페이지 번호 (기본값: 1)")
-            @RequestParam(value = "pageNo", required = false, defaultValue = "1") int pageNo) {
+        // 1. 서비스로부터 이미 완성된 TourResponseListDto 객체를 받아옵니다.
+        TourResponseListDto result = tourService.getTourListByRegion(lDongRegnCd, pageNo);
 
-        // 새로 변경된 서비스 레이어 호출 (지역 코드와 페이지 번호 매개변수 전달)
-        List<TourDto> tourList = tourService.getTourListByRegion(lDongRegnCd, pageNo);
+        // 안전장치: 결과 객체 자체가 null일 경우 즉시 빈 배열과 마지막 페이지 표시(true) 반환
+        if (result == null) {
+            return ResponseEntity.ok(new TourServerResponse(Collections.emptyList(), true));
+        }
 
-        // 프론트엔드에게 표준 HTTP 응답(200 OK)과 함께 리스트 전달
-        return ResponseEntity.ok(tourList);
+        // 2. DTO 내부에 담긴 순수 관광지 리스트(tours) 추출
+        List<TourDto> tours = result.getTours();
+        if (tours == null) {
+            tours = Collections.emptyList();
+        }
+
+        // 3. 🛠️ 오류 수정: 서비스가 이미 계산해 둔 isLast 값을 그대로 가져옵니다.
+        boolean isLast = result.isLast();
+
+        // 4. Next.js가 스크롤을 제어할 수 있도록 최적화된 구조로 포장하여 반환
+        return ResponseEntity.ok(new TourServerResponse(tours, isLast));
     }
 }
 

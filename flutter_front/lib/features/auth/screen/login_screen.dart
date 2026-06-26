@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../provider/auth_provider.dart';
 import 'signup_screen.dart';
+import '../provider/google_signin_provider.dart';
+import 'google_additional_info_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -173,8 +175,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: 구글 소셜로그인 연동 (다음 단계)
+                    onPressed: () async {
+                      final provider = context.read<GoogleSignInProvider>();
+                      await provider.startGoogleSignIn();
+
+                      if (!context.mounted) return;
+
+                      if (provider.step == GoogleSignInStep.needsAdditionalInfo) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const GoogleAdditionalInfoScreen(),
+                          ),
+                        );
+                      } else if (provider.step == GoogleSignInStep.done) {
+                        Navigator.of(context)
+                            .pushNamedAndRemoveUntil('/', (route) => false);
+                      } else if (provider.errorMessage != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(provider.errorMessage!)),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.g_mobiledata,
                         color: AppColors.textPrimary, size: 26),
@@ -183,22 +203,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       minimumSize: const Size.fromHeight(52),
                       side: const BorderSide(color: AppColors.border),
                       foregroundColor: AppColors.textPrimary,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: 카카오 소셜로그인 연동 (다음 단계)
-                    },
-                    icon: const Icon(Icons.chat_bubble, color: Color(0xFF3C1E1E)),
-                    label: const Text('카카오로 계속하기'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFEE500),
-                      foregroundColor: const Color(0xFF3C1E1E),
-                      minimumSize: const Size.fromHeight(52),
-                      elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),

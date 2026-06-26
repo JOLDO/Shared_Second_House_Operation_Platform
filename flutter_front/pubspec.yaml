@@ -33,6 +33,7 @@ dependencies:
   kakao_map_plugin: ^0.4.0      # 카카오맵
   table_calendar: ^3.1.2        # 예약 캘린더
   google_fonts: ^6.2.1
+  uuid: ^4.5.1
 
   geolocator: ^13.0.1           # 위치 스트림 (이동경로 추적)
   flutter_foreground_task: ^8.10.0 # 상시 알림 포그라운드 서비스 (백그라운드 위치 수집)

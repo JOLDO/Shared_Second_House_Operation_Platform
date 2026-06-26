@@ -100,8 +100,7 @@ class StayAccommodationController extends ChangeNotifier {
       final results = await Future.wait(futures);
       accommodations = results[0] as List<StayAccommodationDto>;
       if (userId != null) {
-        final raw = results[1] as List<dynamic>;
-        mySubscriptions = raw.map((e) => StaySubscriptionDto.fromJson(e as Map<String, dynamic>)).toList();
+        mySubscriptions = results[1] as List<StaySubscriptionDto>;
         debugPrint('📋 [내 구독 목록] userId=$userId, 총 ${mySubscriptions.length}건');
         for (final s in mySubscriptions) {
           debugPrint('  └ id=${s.subscriptionId} | accommodationId=${s.accommodationId} | status=${s.status} | ${s.startDate}~${s.endDate}');
@@ -168,8 +167,7 @@ class StayAccommodationController extends ChangeNotifier {
       ]);
       selectedAccommodation = results[0] as StayAccommodationDto;
       stories = results[1] as List<StayStoryDto>;
-      final raw = results[2] as List<dynamic>;
-      mySubscriptions = raw.map((e) => StaySubscriptionDto.fromJson(e as Map<String, dynamic>)).toList();
+      mySubscriptions = results[2] as List<StaySubscriptionDto>;
     } catch (e) {
       errorMessage = '숙소 정보를 불러오지 못했습니다.';
       debugPrint('❌ [숙소 상세 컨트롤러] $e');

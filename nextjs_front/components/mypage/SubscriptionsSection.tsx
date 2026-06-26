@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { api } from '@/lib/api';
-import { UserResp } from '@/types/auth';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import { UserResp } from "@/types/auth";
 import {
   SubscriptionsUserResp,
   SubscriptionStatus,
-} from '@/types/subscription';
+} from "@/types/subscription";
 
 interface AccommodationInfo {
   name: string;
@@ -20,16 +21,17 @@ interface SubscriptionRow extends SubscriptionsUserResp {
 }
 
 export default function SubscriptionsSection() {
+  const router = useRouter(); // 추가1
   const [rows, setRows] = useState<SubscriptionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api
-      .get<UserResp>('/api/users')
+      .get<UserResp>("/api/users")
       .then((userData) =>
         api.get<SubscriptionsUserResp[]>(
-          `/api/subscriptions/my/${userData.userId}`
-        )
+          `/api/subscriptions/my/${userData.userId}`,
+        ),
       )
       .then((subs) => {
         const list = Array.isArray(subs) ? subs : [];
@@ -38,32 +40,52 @@ export default function SubscriptionsSection() {
           list.map((s) =>
             api
               .get<AccommodationInfo>(
-                `/api/stay/accommodations/${s.accommodationId}`
+                `/api/stay/accommodations/${s.accommodationId}`,
               )
               .then((acc) => ({
                 ...s,
                 accommodationName: acc.name,
                 accommodationAddress: acc.address,
               }))
-              .catch(() => ({ ...s }))
-          )
+              .catch(() => ({ ...s })),
+          ),
         );
       })
       .then(setRows)
-      .catch((err) => console.log('구독 목록 조회 실패:', err))
+      .catch((err) => console.log("구독 목록 조회 실패:", err))
       .finally(() => setLoading(false));
   }, []);
 
+  // 추가2
+  const handleChatButtonClick = async (accommodationId: number) => {
+    try {
+      // 백엔드 컨트롤러에 숙소 ID를 보내 방 정보(id)를 받아옴
+      const chatRoom = await api.get<{ id: number }>(
+        `/api/guest/chat/room/${accommodationId}`,
+      );
+
+      if (chatRoom && chatRoom.id) {
+        // 게스트챗 파일이 인식하는 쿼리스트링(?roomId=방번호) 형태로 리다이렉트
+        router.push(`/guestChat?roomId=${chatRoom.id}`);
+      } else {
+        alert("채팅방 정보를 불러올 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("채팅방 이동 실패:", error);
+      alert("채팅방 연결 중 오류가 발생했습니다.");
+    }
+  };
+
   const getStatusBadge = (status: SubscriptionStatus) => {
     switch (status) {
-      case 'ACTIVE':
-        return { label: '구독 중', cls: 'bg-[#EAF3DE] text-[#3B6D11]' };
-      case 'PENDING':
-        return { label: '승인 대기', cls: 'bg-[#FFF8E6] text-[#B07D1A]' };
-      case 'EXPIRED':
-        return { label: '만료됨', cls: 'bg-[#F0EBE5] text-[#8C8178]' };
-      case 'CANCELLED':
-        return { label: '취소됨', cls: 'bg-[#F0EBE5] text-[#8C8178]' };
+      case "ACTIVE":
+        return { label: "구독 중", cls: "bg-[#EAF3DE] text-[#3B6D11]" };
+      case "PENDING":
+        return { label: "승인 대기", cls: "bg-[#FFF8E6] text-[#B07D1A]" };
+      case "EXPIRED":
+        return { label: "만료됨", cls: "bg-[#F0EBE5] text-[#8C8178]" };
+      case "CANCELLED":
+        return { label: "취소됨", cls: "bg-[#F0EBE5] text-[#8C8178]" };
     }
   };
 
@@ -115,7 +137,7 @@ export default function SubscriptionsSection() {
           return (
             <div
               key={r.subscriptionId}
-              className={`px-5 py-4 ${i < rows.length - 1 ? 'border-b border-[#F0EBE5]' : ''}`}
+              className={`px-5 py-4 ${i < rows.length - 1 ? "border-b border-[#F0EBE5]" : ""}`}
             >
               {/* 숙소명 + 상태 */}
               <div className="flex items-center justify-between mb-1">
@@ -162,12 +184,11 @@ export default function SubscriptionsSection() {
               </div>
 
               {/* 채팅 버튼 - ACTIVE 구독만 표시 */}
-              {r.status === 'ACTIVE' && (
+              {r.status === "ACTIVE" && (
                 <div className="flex gap-2">
-                  {/* TODO: 채팅 담당 멤버 구현 경로로 변경 (예: `/chat/${r.accommodationId}`) */}
-                  <Link
-                    href={`/chat/${r.accommodationId}`}
-                    className="flex-1 h-10 flex items-center justify-center gap-1.5 text-sm font-medium !text-[#3B6D11] border border-[#D6E4C8] bg-[#F2F7EC] rounded-lg hover:bg-[#EAF3DE] transition-colors"
+                  <button
+                    onClick={() => handleChatButtonClick(r.accommodationId)}
+                    className="flex-1 h-10 flex items-center justify-center gap-1.5 text-sm font-medium text-[#3B6D11] border border-[#D6E4C8] bg-[#F2F7EC] rounded-lg hover:bg-[#EAF3DE] transition-colors cursor-pointer"
                   >
                     <svg
                       width="14"
@@ -181,7 +202,7 @@ export default function SubscriptionsSection() {
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>
                     채팅
-                  </Link>
+                  </button>
                   <Link
                     href={`/reservations/${r.accommodationId}`}
                     className="flex-1 flex items-center justify-center gap-1.5 h-10 text-sm !text-red-500 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"

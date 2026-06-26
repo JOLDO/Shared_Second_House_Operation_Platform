@@ -1,14 +1,12 @@
 package com.busanit401.spring_back.controller;
 
-import com.busanit401.spring_back.domain.Cart;
 import com.busanit401.spring_back.domain.service.CartService;
-import com.busanit401.spring_back.dto.CartResponseDto;
+import com.busanit401.spring_back.dto.CartRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -18,15 +16,23 @@ public class CartController {
 
     private final CartService cartService;
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<CartResponseDto>> getCartItems(@PathVariable("userId") Long userId) {
-        return ResponseEntity.ok(cartService.getCartList(userId));
+    // CartController.java에 추가
+    @GetMapping("/list")
+    public ResponseEntity<?> getCartList() {
+        // 1004L 사용자의 장바구니 목록을 가져오는 서비스 메서드 호출
+        var cartItems = cartService.getCartList(1004L);
+        return ResponseEntity.ok(cartItems);
     }
 
+    // 장바구니 추가
     @PostMapping("/add")
-    public ResponseEntity<String> addToCart(@RequestBody Cart request) {
-        // userId 1004는 테스트용 고정값, 추후 세션/토큰에서 가져오세요
-        cartService.addCart(1004L, request.getProduct().getProductId(), request.getQuantity());
-        return ResponseEntity.ok("장바구니 담기 성공");
+    public ResponseEntity<Map<String, String>> addToCart(@RequestBody CartRequestDto request) {
+        // userId는 1004로 고정 (추후 세션/토큰 도입 시 변경)
+        cartService.addCart(1004L, request.getProductId(), request.getQuantity());
+
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "상품이 장바구니에 성공적으로 담겼습니다."
+        ));
     }
 }

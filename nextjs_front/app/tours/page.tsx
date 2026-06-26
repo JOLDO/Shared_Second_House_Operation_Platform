@@ -34,6 +34,12 @@ interface TourItem {
   contentid: string;
 }
 
+// 1. 서버 응답용 인터페이스 정의 추가
+interface TourServerResponse {
+  tours: TourItem[];
+  isLast: boolean;
+}
+
 export default function TourListPage() {
   /* ==========================================
    * [2] 상태 관리 변수 (Component States)
@@ -53,37 +59,64 @@ export default function TourListPage() {
   /* ==========================================
    * [4] 데이터 비동기 통신 (API Fetch Functions)
    * ========================================== */
+  const [isError, setIsError] = useState<boolean>(false);
+
   const fetchTourData = useCallback(
     async (region: string, page: number, isNewCategory = false) => {
-      // API 중복 호출 원천 차단
+      // 💡 에러 방어 로직 추가: 이미 에러가 발생한 상태면 더 이상 요청하지 않음 (선택 사항)
+      if (isError) return;
+
+      // api 요청 중복 방지: isLoadingRef를 통해 상태를 확인하고, 동시에 여러 요청이 발생하지 않도록 제어
       if (isLoadingRef.current) return;
+
+      // 더이상 가져올 데이터가 없거나, 이미 로딩 중이면 요청 중단 (카테고리 전환이 아닐 때만 체크)
+      if (!isNewCategory && !hasMore) return;
 
       isLoadingRef.current = true;
       setIsLoading(true);
 
       try {
-        const response = await axios.get<TourItem[]>(
+        const response = await axios.get<TourServerResponse>(
           `http://localhost:8080/api/tours?lDongRegnCd=${region}&pageNo=${page}`,
         );
-        const data = response.data;
 
-        // 카테고리 변경 시에는 기존 리스트를 덮어씌우고, 스크롤 시에는 누적 연산
-        if (isNewCategory) {
-          setTourList(data);
-        } else {
-          setTourList((prev) => [...prev, ...data]);
-        }
+        // 구조 분해 할당 시 안전장치 제공 (tours가 없을 경우 대비 빈 배열 기본값 지정)
+        const { tours = [], isLast } = response.data;
 
-        // 백엔드 약속 규격(10개)보다 적게 오면 데이터가 더 없는 것으로 판단
-        setHasMore(data.length === 10);
+        // 카테고리 변경 여부에 따른 상태 업데이트 처리 단순화
+        setTourList((prev) => (isNewCategory ? tours : [...prev, ...tours]));
+        setHasMore(!isLast);
       } catch (error) {
-        console.error("관광지 데이터를 불러오는 중 오류 발생:", error);
+        setHasMore(false);
+        setIsError(true);
+        // 🔍 디버깅용 상세 로그 출력
+        console.error("❌ 관광지 데이터를 불러오는 중 오류 발생!");
+
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
+            // 백엔드(Spring)에서 의도적으로 보낸 500 에러 및 메시지가 존재할 때
+            console.error(
+              `▶ [Server Error ${error.response.status}]:`,
+              error.response.data,
+            );
+          } else if (error.request) {
+            // 스프링 서버가 꺼져있거나 네트워크 연결 자체가 안 될 때
+            console.error(
+              "▶ [Network Error]: 백엔드 서버로부터 응답을 받지 못했습니다. 서버 구동 상태를 확인하세요.",
+            );
+          } else {
+            console.error("▶ [Axios Message]:", error.message);
+          }
+        } else {
+          // Axios 에러가 아닌 일반 런타임 에러 처리
+          console.error("▶ [Unknown Error]:", error);
+        }
       } finally {
         isLoadingRef.current = false;
         setIsLoading(false);
       }
     },
-    [],
+    [hasMore, isError],
   );
 
   /* ==========================================
@@ -105,6 +138,7 @@ export default function TourListPage() {
    * ========================================== */
   // 무한 스크롤 감지 (Intersection Observer) 설정
   useEffect(() => {
+    // 더 가져올 데이터가 없거나 로딩 중이면 관찰을 시작하지 않음
     if (!observerTarget.current || !hasMore || isLoading) return;
 
     const observer = new IntersectionObserver(
@@ -112,11 +146,10 @@ export default function TourListPage() {
         const { isIntersecting } = entries[0];
 
         if (isIntersecting && !isLoadingRef.current && hasMore) {
-          // 💡 0페이지에서 시작하므로 다음 페이지는 1페이지가 됨
           const nextPage = pageNo + 1;
 
           setPageNo(nextPage);
-          // 💡 최초 진입(nextPage가 1일 때)에는 기존 데이터를 덮어쓰도록(true) 설정
+          // 최초 진입(nextPage가 1일 때)에는 기존 데이터를 덮어쓰도록(true) 설정
           fetchTourData(selectedRegion, nextPage, nextPage === 1);
         }
       },

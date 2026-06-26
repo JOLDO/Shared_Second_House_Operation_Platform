@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import AccommodationCard from './components/AccommodationCard';
 import PriceCalculator from '../components/PriceCalculator';
-import styles from './page.module.css';
+import AccommodationFormModal from './components/AccommodationFormModal';
 import { api } from '@/lib/api';
+import { UserResp } from '@/types/auth';
+import styles from './page.module.css';
 
-// 숙소 가격 구간 타입
 export interface StayAccommodationPriceDto {
   id: number;
   minMonths: number;
@@ -14,7 +15,6 @@ export interface StayAccommodationPriceDto {
   discountRate: number;
 }
 
-// 숙소 타입
 export interface StayAccommodationDto {
   id: number;
   name: string;
@@ -35,7 +35,6 @@ export interface StayAccommodationDto {
   prices: StayAccommodationPriceDto[];
 }
 
-// Spring Page 응답 타입
 interface PageResponse<T> {
   content: T[];
   totalPages: number;
@@ -43,64 +42,81 @@ interface PageResponse<T> {
   number: number;
 }
 
-/*
- * ==================================================================================
- * [파일 정보]
- * 위치  : app/accommodations/page.tsx
- * 역할  : 숙소 목록 페이지 (검색 + 슬라이딩 윈도우 페이지네이션)
- * 사용처 : 앱 내 숙소 목록 진입점, app/page.tsx 에서 "더 보러가기" 클릭 시 이동
- * ----------------------------------------------------------------------------------
- * [연관 파일]
- * - AccommodationCard.tsx                    : 숙소 카드 컴포넌트
- * - PriceCalculator.tsx                      : 상단 가격 계산기 컴포넌트
- * - page.module.css                          : 스타일
- * - Spring: StayAccommodationController.java : GET /api/stay/accommodations
- * ----------------------------------------------------------------------------------
- * [기능 목록]
- * - 숙소 목록 조회 (검색 + 페이지네이션, 6개씩)
- * - 이름 검색 (Enter 키 또는 검색 버튼)
- * - X 버튼으로 검색어 초기화 및 전체 목록 복원
- * - 슬라이딩 윈도우 페이지네이션 (최대 5개 버튼)
- * ----------------------------------------------------------------------------------
- * [파일 흐름과 순서]
- * 진입 → useEffect(page, keyword) → GET ?page=0&size=6
- *       → data.content → setAccommodations / data.totalPages → setTotalPages
- *       → 검색 입력 → handleSearch() → setKeyword → useEffect 재실행
- *       → 페이지 버튼 클릭 → setCurrentPage → useEffect 재실행
- * ==================================================================================
- */
-
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 6;
 
 export default function AccommodationsPage() {
-  const [accommodations, setAccommodations] = useState<StayAccommodationDto[]>(
-    []
-  );
-  const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [keyword, setKeyword] = useState('');
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // 계산기 상태
+  // 등록/수정 모달 상태
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editTarget, setEditTarget] = useState<StayAccommodationDto | null>(
+    null
+  );
+
   const [teams, setTeams] = useState(1);
   const [months, setMonths] = useState(1);
 
+  // 응답 데이터 + 그 데이터가 어떤 요청에 대한 응답인지 함께 보관
+  const [result, setResult] = useState<{
+    requestId: string;
+    accommodations: StayAccommodationDto[];
+    totalPages: number;
+  } | null>(null);
+
+  // 이번 렌더링에서 "있어야 할" 요청을 식별하는 키 (순수 함수만 사용)
+  const requestId = useMemo(
+    () => `${currentPage}::${keyword}::${refreshKey}`,
+    [currentPage, keyword, refreshKey]
+  );
+
+  // loading은 별도 state가 아니라 파생값
+  const loading = result?.requestId !== requestId;
+
   useEffect(() => {
+    let ignore = false;
+
     const params = new URLSearchParams({
       page: String(currentPage),
       size: String(PAGE_SIZE),
     });
     if (keyword) params.set('keyword', keyword);
 
-    api.get<PageResponse<StayAccommodationDto>>(`/api/stay/accommodations?${params}`)
-      .then((data) => {
-        setAccommodations(data.content);
-        setTotalPages(data.totalPages);
+    fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/stay/accommodations?${params}`
+    )
+      .then((res) => res.json())
+      .then((data: PageResponse<StayAccommodationDto>) => {
+        if (ignore) return;
+        setResult({
+          requestId,
+          accommodations: data.content,
+          totalPages: data.totalPages,
+        });
       })
-      .catch((err) => console.log('숙소 목록 조회 실패:', err))
-      .finally(() => setLoading(false));
-  }, [currentPage, keyword]);
+      .catch((err) => {
+        if (!ignore) console.log('숙소 목록 조회 실패:', err);
+      });
+
+    return () => {
+      ignore = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId]);
+
+  // admin 여부 확인 (비로그인/일반 유저는 false 유지, 화면은 정상 노출)
+  useEffect(() => {
+    api
+      .get<UserResp>('/api/users')
+      .then((user) => setIsAdmin(user.role === 'ADMIN'))
+      .catch(() => setIsAdmin(false));
+  }, []);
+
+  const accommodations = result?.accommodations ?? [];
+  const totalPages = result?.totalPages ?? 0;
 
   const handleSearch = () => {
     setCurrentPage(0);
@@ -113,7 +129,6 @@ export default function AccommodationsPage() {
 
   return (
     <div className={styles.container}>
-      {/* 상단 계산기 */}
       <div className={styles.calculatorWrap}>
         <PriceCalculator
           teams={teams}
@@ -123,7 +138,6 @@ export default function AccommodationsPage() {
         />
       </div>
 
-      {/* 검색창 */}
       <div className={styles.searchWrap}>
         <div className={styles.searchInputWrap}>
           <input
@@ -152,9 +166,18 @@ export default function AccommodationsPage() {
         >
           검색
         </button>
+
+        {isAdmin && (
+          <button
+            className="btn-primary"
+            style={{ marginLeft: 8, flex: 1 }}
+            onClick={() => setShowCreateModal(true)}
+          >
+            + 숙소 등록
+          </button>
+        )}
       </div>
 
-      {/* 숙소 목록 */}
       {loading ? (
         <div className={styles.loading}>불러오는 중...</div>
       ) : accommodations.length === 0 ? (
@@ -167,12 +190,13 @@ export default function AccommodationsPage() {
               accommodation={accommodation}
               teams={teams}
               months={months}
+              isAdmin={isAdmin}
+              onEdit={(acc) => setEditTarget(acc)}
             />
           ))}
         </div>
       )}
 
-      {/* 페이지네이션 - 슬라이딩 윈도우 (최대 5개) */}
       {totalPages > 1 &&
         (() => {
           const start = Math.max(0, Math.min(currentPage - 2, totalPages - 5));
@@ -209,6 +233,25 @@ export default function AccommodationsPage() {
             </div>
           );
         })()}
+
+      {/* 등록 모달 */}
+      {showCreateModal && isAdmin && (
+        <AccommodationFormModal
+          mode="create"
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
+
+      {/* 수정 모달 */}
+      {editTarget && isAdmin && (
+        <AccommodationFormModal
+          mode="edit"
+          initialData={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSuccess={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }

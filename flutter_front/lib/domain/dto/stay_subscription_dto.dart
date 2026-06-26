@@ -54,3 +54,24 @@ class StaySubscriptionDto {
 
   bool get isActive => status == 'ACTIVE';
 }
+
+// [날짜 검증 추가] 숙소별 사용 불가 기간 응답 — GET /api/subscriptions/accommodation/{id}
+class SubscriptionDateRangeDto {
+  final String startDate;
+  final String endDate;
+  final String status; // PENDING, ACTIVE
+
+  SubscriptionDateRangeDto({
+    required this.startDate,
+    required this.endDate,
+    required this.status,
+  });
+
+  factory SubscriptionDateRangeDto.fromJson(Map<String, dynamic> json) {
+    return SubscriptionDateRangeDto(
+      startDate: json['startDate'] ?? '',
+      endDate: json['endDate'] ?? '',
+      status: json['status'] ?? '',
+    );
+  }
+}

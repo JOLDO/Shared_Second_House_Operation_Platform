@@ -24,3 +24,10 @@ export const MONTH_OPTIONS = [
   { value: 5, label: '5개월' },
   { value: 6, label: '6개월 이상' },
 ];
+
+// 팀 수 선택 옵션 (1~12팀)
+// 변경 필요 시 이 파일만 수정
+export const TEAM_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1} 팀`,
+}));

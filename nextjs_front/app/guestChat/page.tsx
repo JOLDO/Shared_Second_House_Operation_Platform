@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
 import { Client } from "@stomp/stompjs"; // 웹소켓(STOMP) 프로토콜을 사용하기 위한 클라이언트 라이브러리
+import { api } from "@/lib/api"; // 공통 api 모듈 경로
 
 // [타입 정의] 백엔드 및 웹소켓 서버와 주고받을 채팅 메시지의 데이터 규격 선언
 interface ChatMessage {
@@ -16,6 +17,7 @@ interface ChatMessage {
   writer?: string; // 작성자 표기 다변화 대비용 필드들
   senderNickname?: string;
   userName?: string;
+  userId?: number; // ➕ 백엔드에서 과거 내역을 userId로 줄 경우를 대비해 추가
 }
 
 function GuestChatContent() {
@@ -23,9 +25,9 @@ function GuestChatContent() {
   const searchParams = useSearchParams();
   const chatRoomId = Number(searchParams.get("roomId"));
 
-  // [임시 사용자 정보] 테스트 및 현재 데모용으로 고정해 둔 로그인 유저(발신자)의 정보
-  const senderId = 100;
-  const senderName = "string2";
+  // 🔄 [수정] 하드코딩(100)을 지우고, 로그인한 실제 유저 정보를 담을 상태 관리
+  const [senderId, setSenderId] = useState<number | null>(null);
+  const [senderName, setSenderName] = useState<string>("게스트");
 
   // [상태 관리] 메시지 배열, 입력창 텍스트, 화면 로딩 상태 관리
   const [messages, setMessages] = useState<ChatMessage[]>([]); // 채팅 기록 상태
@@ -35,6 +37,33 @@ function GuestChatContent() {
   // [참조 관리] 컴포넌트 리렌더링과 상관없이 유지가 필요한 웹소켓 객체와 스크롤 DOM 노드 보관
   const stompClientRef = useRef<Client | null>(null); // 웹소켓 연결 세션 유지용
   const scrollRef = useRef<HTMLDivElement | null>(null); // 새 메시지 수신 시 스크롤 아래로 내리기 위한 용도
+
+  // -------------------------------------------------------------------------------
+  // ➕ [추가] 로그인 유저 정보 가져오기 (마이페이지와 동일한 API 주소 연동)
+  // [수정] 로그인 유저 정보 가져오기 (fetch 대신 공통 api 모듈로 변경)
+  // -------------------------------------------------------------------------------
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const userData = await api.get<{
+          userId: number;
+          nickname?: string;
+          username?: string;
+        }>("/api/users");
+
+        if (userData && userData.userId) {
+          setSenderId(userData.userId); // 이제 정상적으로 4번 ID가 안착합니다!
+          setSenderName(userData.nickname || userData.username || "게스트");
+          console.log("✅ 채팅방 유저 연동 성공:", userData.userId);
+        }
+      } catch (error) {
+        console.error("❌ 유저 정보 로드 실패:", error);
+        // 토큰 만료 등의 예외 상황을 고려한 개발/테스트용 방어코드
+        setSenderId(4);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // -------------------------------------------------------------------------------
   // 1. 과거 메시지 내역 조회 (HTTP GET)
@@ -50,6 +79,10 @@ function GuestChatContent() {
         );
         if (response.ok) {
           const historyData = await response.json();
+
+          // 💡 브라우저 F12 개발자도구 콘솔에서 백엔드가 주는 실제 필드명이 무엇인지 체크하기 위한 로그
+          console.log("🎬 백엔드 원본 데이터 확인:", historyData);
+
           setMessages(historyData); // 가져온 배열 데이터로 대화 창 초기화
         }
       } catch (error) {
@@ -118,6 +151,12 @@ function GuestChatContent() {
     const content = inputText.trim(); // 공백 문자 제거
     if (!content || !chatRoomId) {
       console.log("⚠️ 텍스트가 비어있거나 방 번호가 없습니다.");
+      return;
+    }
+
+    // 🔄 [수정] senderId가 null 혹은 undefined일 경우를 대비한 방어막 로직 추가
+    if (senderId === null || senderId === undefined) {
+      alert("사용자 정보를 확인하는 중입니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
@@ -197,7 +236,7 @@ function GuestChatContent() {
         {chatRoomId}번 게스트 단체방 (Web - Query)
       </header>
 
-      {/* 스크롤 가능한 대화 내역 출력 구역 */}
+      {/* ス크롤 가능한 대화 내역 출력 구역 */}
       <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-3">
         {/* 안내 배너: 입장 공지 문구 */}
         <p
@@ -213,11 +252,26 @@ function GuestChatContent() {
 
         {/* 메시지 리스트 루프 반전 및 렌더링 */}
         {messages.map((msg, index) => {
-          // 본인 메시지 여부 판단 (로그인 사용자 ID와 메시지 내 발신자 ID 비교)
-          const isMe = msg.senderId === senderId;
+          // 🔄 [수정] 백엔드에서 넘겨주는 발신자 ID 값 추출 (과거 내역과 실시간 맵핑 명칭 방어막)
+          const msgSenderId = msg.senderId ?? msg.userId;
+
+          // 🔄 [수정] 현재 로그인한 실제 유저 아이디와 메시지 고유 발신 ID가 정확히 같을 때만 본인으로 처리
+          const isMe =
+            msgSenderId !== undefined &&
+            msgSenderId !== null &&
+            msgSenderId === senderId;
+
           // 다양한 백엔드 필드 명칭(content, messageContent) 유연하게 바인딩 처리
           const displayContent =
             msg.content || msg.messageContent || "내용 없음";
+
+          // 상대방 닉네임 유연하게 바인딩 처리
+          const displaySenderName =
+            msg.senderName ||
+            msg.writer ||
+            msg.senderNickname ||
+            msg.userName ||
+            "다른 게스트";
 
           return (
             <div
@@ -240,7 +294,7 @@ function GuestChatContent() {
                   border: isMe ? "none" : "1px solid var(--color-border)",
                 }}
               >
-                {/* 상대방 메시지일 때만 위에 상대방의 이름/닉네임 노출 */}
+                {/* 🔄 [수정] 내가 쓴 글이 아닐 때만(상대방 메시지) 위에 이름/닉네임 노출 */}
                 {!isMe && (
                   <div
                     className="font-bold mb-1"
@@ -249,11 +303,11 @@ function GuestChatContent() {
                       fontSize: "var(--font-size-sm)",
                     }}
                   >
-                    {msg.senderName ||
-                      msg.writer ||
-                      msg.senderNickname ||
-                      msg.userName ||
-                      "게스트"}
+                    {displaySenderName}
+                    {/* 데이터 구분을 확실하게 돕기 위해 상대방 아이디(ID)를 이름 옆에 연하게 표시 */}
+                    <span className="text-xs font-normal text-gray-400 ml-1">
+                      (ID: {msgSenderId})
+                    </span>
                   </div>
                 )}
                 {/* 줄 바꿈과 영문 길이에 따라 레이아웃이 깨지지 않게 해주는 단어 파괴 스타일 적용 */}
@@ -276,6 +330,7 @@ function GuestChatContent() {
         <input
           type="text"
           value={inputText}
+          disabled={senderId === null}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
           placeholder="메시지를 입력하세요..."

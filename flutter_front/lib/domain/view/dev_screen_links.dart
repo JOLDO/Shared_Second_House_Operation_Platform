@@ -4,6 +4,7 @@ import 'package:flutter_front/common/constants/app_colors.dart';
 import 'package:flutter_front/domain/view/product_list_screen.dart';
 import 'package:flutter_front/domain/view/stay_accommodation_list_screen.dart';
 import 'package:flutter_front/domain/view/stay_my_reservation_screen.dart';
+import 'package:flutter_front/domain/view/stay_my_subscription_screen.dart';
 import 'package:flutter_front/domain/view/stay_reservation_calendar_screen.dart';
 import 'package:flutter_front/domain/view/stay_subscription_apply_screen.dart';
 import 'package:flutter_front/domain/dto/stay_accommodation_dto.dart';
@@ -40,6 +41,12 @@ class DevScreenLinks extends StatelessWidget {
             title: '내 예약 목록',
             subtitle: '예약 카드 · 취소 기능',
             onTap: () => _go(context, const StayMyReservationScreen()),
+          ),
+          _DevTile(
+            icon: Icons.home_outlined,
+            title: '내 구독 목록',
+            subtitle: '구독 카드 · 예약하기 버튼',
+            onTap: () => _go(context, const StayMySubscriptionScreen()),
           ),
           _DevTile(
             icon: Icons.date_range_outlined,
