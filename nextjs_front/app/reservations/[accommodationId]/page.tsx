@@ -43,6 +43,7 @@ import DatePicker from 'react-datepicker';
 import { ko } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
 import styles from './page.module.css';
+import { MdHouse } from 'react-icons/md';
 import { api } from '@/lib/api';
 import { UserResp } from '@/types/auth';
 
@@ -79,6 +80,10 @@ interface SubscriptionDto {
   status: string;
 }
 
+interface AccommodationDto {
+  name: string;
+}
+
 export default function ReservationPage() {
   const params = useParams();
   const router = useRouter();
@@ -91,6 +96,7 @@ export default function ReservationPage() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [accommodationName, setAccommodationName] = useState<string>('');
 
   const [userId, setUserId] = useState<number | null>(null);
 
@@ -137,9 +143,13 @@ export default function ReservationPage() {
           api.get<ReservationDto[]>(
             `/api/stay/reservations/accommodation/${accommodationId}`
           ),
+          api.get<AccommodationDto>(
+            `/api/stay/accommodations/${accommodationId}`
+          ),
         ]);
       })
-      .then(([subscriptionData, reservationsData]) => {
+      .then(([subscriptionData, reservationsData, accommodationData]) => {
+        setAccommodationName(accommodationData.name);
         console.log('[ReservationPage] 구독 데이터:', subscriptionData);
         console.log('[ReservationPage] 예약 데이터:', reservationsData);
 
@@ -235,7 +245,8 @@ export default function ReservationPage() {
       .then((data) => {
         console.log('[ReservationPage] 예약 생성 완료:', data);
         alert('예약이 완료됐어요!');
-        router.push('/my/reservations');
+        // router.push('/my/reservations'); // /my/reservations 사용 안함 → /mypage 내예약 탭으로 통합
+        router.push('/mypage?tab=reservations');
       })
       .catch((err) => {
         const msg =
@@ -254,6 +265,12 @@ export default function ReservationPage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>예약하기</h1>
+      {accommodationName && (
+        <p className={styles.accommodationName}>
+          <MdHouse className={styles.accommodationIcon} />
+          {accommodationName}
+        </p>
+      )}
 
       {/* 기본 안내 */}
       {/* {!startDate && ( */}

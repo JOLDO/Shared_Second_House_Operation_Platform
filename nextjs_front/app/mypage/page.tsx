@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation"; // 변경 전
+import { useRouter, useSearchParams } from "next/navigation"; // useSearchParams 추가: URL ?tab= 파라미터로 초기 탭 지정
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { tokenStorage } from "@/lib/token";
@@ -18,7 +19,11 @@ export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserResp | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeMenu, setActiveMenu] = useState<Menu>("profile");
+  const searchParams = useSearchParams(); // URL ?tab= 파라미터 읽기
+  // const [activeMenu, setActiveMenu] = useState<Menu>("profile"); // 변경 전: 항상 profile 탭으로 시작
+  const [activeMenu, setActiveMenu] = useState<Menu>(
+    (searchParams.get("tab") as Menu) ?? "profile" // ?tab=reservations 등으로 초기 탭 지정 가능
+  );
 
   useEffect(() => {
     api

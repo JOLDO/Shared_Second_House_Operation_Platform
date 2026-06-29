@@ -1,5 +1,6 @@
 package com.busanit401.spring_back.dto.waitingSubscriptionUser;
 
+import com.busanit401.spring_back.domain.entity.StayAccommodation;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

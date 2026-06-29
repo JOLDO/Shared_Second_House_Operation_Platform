@@ -1,6 +1,7 @@
 package com.busanit401.spring_back.domain.entity;
 
 import com.busanit401.spring_back.domain.BaseTimeEntity;
+import com.busanit401.spring_back.domain.SubscriptionsUser;
 import com.busanit401.spring_back.dto.StayAccommodationRequestDto;
 import com.busanit401.spring_back.enums.StayAccommodationStatus;
 import jakarta.persistence.*;

@@ -13,7 +13,21 @@
 .title {
   font-size: var(--font-size-xl);
   font-weight: 700;
-  margin-bottom: 32px;
+  margin-bottom: 8px;
+}
+
+.accommodationName {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  margin-bottom: 24px;
+}
+
+.accommodationIcon {
+  font-size: 1.1em;
+  flex-shrink: 0;
 }
 
 .calendarHint {

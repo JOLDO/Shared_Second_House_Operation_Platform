@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_front/domain/view/product_list_screen.dart';
 import 'package:flutter_front/domain/view/cart_screen.dart';
+// 💡 관리자 배달 주문 내역 화면 임포트 추가
+import 'package:flutter_front/domain/view/delivery_admin_screen.dart';
 
 class DeliveryScreen extends StatelessWidget {
   const DeliveryScreen({super.key});
@@ -55,6 +57,19 @@ class DeliveryScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const CartScreen()),
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // ⚙️ 3. [신규 추가] 관리자 배달 주문 내역 관리 버튼
+              _buildMenuButton(
+                context,
+                icon: Icons.delivery_dining, // 오토바이 모양 배달 아이콘
+                label: '관리자 배달 주문 내역',
+                color: const Color(0xFF2E6F40), // 세컨하우스 메인 딥그린 테마 색상 맞춤
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DeliveryAdminScreen()),
+                ),
+              ),
             ],
           ),
         ),
@@ -62,6 +77,7 @@ class DeliveryScreen extends StatelessWidget {
     );
   }
 
+  // 기존에 이쁘게 작성해두신 버튼 가로채기 공통 빌더 템플릿 그대로 사용
   Widget _buildMenuButton(
       BuildContext context, {
         required IconData icon,

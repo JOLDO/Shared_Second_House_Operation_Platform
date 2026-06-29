@@ -36,7 +36,7 @@ class StayAccommodationService {
     return (data['content'] as List).map((e) => StayAccommodationDto.fromJson(e)).toList();
   }
 
-  Future<Map<String, dynamic>> getAccommodationsPaged({String? keyword, int page = 0, int size = 3}) async {
+  Future<Map<String, dynamic>> getAccommodationsPaged({String? keyword, int page = 0, int size = 6}) async {
     final params = <String, dynamic>{'page': page, 'size': size};
     if (keyword != null && keyword.isNotEmpty) params['keyword'] = keyword;
     final response = await _dio.get('/stay/accommodations', queryParameters: params);

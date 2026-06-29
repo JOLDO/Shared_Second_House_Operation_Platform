@@ -43,6 +43,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+
   # [개발용 의존성] 코드 스타일 가이드 및 문법 검사(Lint) 도구
   flutter_lints: ^6.0.0
 
@@ -53,8 +54,9 @@ flutter:
   # Assets & Fonts (추후 필요할 때 주석을 풀고 사용하세요)
   # --------------------------------------------------------------
   assets:
+
     - .env
-  #   - assets/images/
+    - assets/images/
   #   - assets/icons/
 
   # fonts:

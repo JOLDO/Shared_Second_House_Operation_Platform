@@ -17,8 +17,6 @@ export default function Navbar() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // 라우트가 바뀐 걸 렌더링 중에 감지해서 메뉴를 닫음
-  // (useEffect 대신 "렌더링 중 상태 조정" 패턴 사용 — cascading render 경고 방지)
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
@@ -107,6 +105,17 @@ export default function Navbar() {
                 style={{ color: "orange", fontWeight: "bold" }}
               >
                 배달 관리 ★
+              </Link>
+            )}
+
+            {/* 관리자 전용 — 구독 관리 페이지 */}
+            {isAdmin && (
+              <Link
+                href="/admin/subscriptions"
+                className={styles.navItem}
+                style={{ color: "#3B6D11", fontWeight: "bold" }}
+              >
+                관리자 페이지
               </Link>
             )}
 

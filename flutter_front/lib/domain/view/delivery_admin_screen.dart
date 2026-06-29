@@ -1,30 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class DeliveryAdminScreen extends StatelessWidget {
+class DeliveryAdminScreen extends StatefulWidget {
   const DeliveryAdminScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DeliveryAdminScreen> createState() => _DeliveryAdminScreenState();
+}
+
+class _DeliveryAdminScreenState extends State<DeliveryAdminScreen> {
+  List<dynamic> orders = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchOrders();
+  }
+
+  Future<void> fetchOrders() async {
+    setState(() => isLoading = true);
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:8080/api/orders/admin'));
+      if (response.statusCode == 200) {
+        setState(() {
+          orders = json.decode(utf8.decode(response.bodyBytes));
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("에러 발생: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> updateStatus(int orderId, String status) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('http://10.0.2.2:8080/api/orders/$orderId/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'status': status}),
+      );
+      if (response.statusCode == 200) fetchOrders();
+    } catch (e) {
+      debugPrint("상태 변경 에러: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('배달 주문 관리 (관리자)'),
-        backgroundColor: const Color(0xFF1A1A1A), // 관리자용 다크 테마
-      ),
-      body: ListView.builder(
-        itemCount: 5, // 실제로는 주문 내역 리스트의 길이
+      appBar: AppBar(title: const Text('관리자 배송/주문 관리')),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+        itemCount: orders.length,
         itemBuilder: (context, index) {
+          final order = orders[index];
           return Card(
-            margin: const EdgeInsets.all(10),
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: ListTile(
-              leading: const Icon(Icons.delivery_dining, color: Colors.blue),
-              title: Text('주문번호: 2024-000${index + 1}'),
-              subtitle: const Text('상태: 배송 준비 중 | 총액: 45,000원'),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  // 주문 상세 보기 또는 상태 변경 로직
-                },
-                child: const Text('상세보기'),
+              title: Text('주문번호: SH-2026-${order['order_id']}'),
+              subtitle: Text('상태: ${order['status']}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(icon: Icon(Icons.local_shipping, color: Colors.blue),
+                      onPressed: () => updateStatus(order['order_id'], "배송중")),
+                  IconButton(icon: Icon(Icons.check_circle, color: Colors.green),
+                      onPressed: () => updateStatus(order['order_id'], "배송완료")),
+                ],
               ),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text('주문 상세 정보'),
+                    content: Text('주소: ${order['delivery_address']}\n금액: ${order['total_amount']}원'),
+                    actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('닫기'))],
+                  ),
+                );
+              },
             ),
           );
         },
