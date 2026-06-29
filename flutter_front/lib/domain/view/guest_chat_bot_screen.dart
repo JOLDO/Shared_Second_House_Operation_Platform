@@ -119,7 +119,7 @@ class _GuestChatBotScreenState extends State<GuestChatBotScreen> {
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      onSubmitted: (_) => _handleSend(),
+                      onSubmitted: (_) => _handleSend(),  //엔터키
                     ),
                   ),
                   IconButton(
@@ -127,7 +127,7 @@ class _GuestChatBotScreenState extends State<GuestChatBotScreen> {
                       Icons.send,
                       color: isSending ? AppColors.textSecondary : primaryColor,
                     ),
-                    onPressed: isSending ? null : _handleSend,
+                    onPressed: isSending ? null : _handleSend,  //버튼
                   ),
                 ],
               ),

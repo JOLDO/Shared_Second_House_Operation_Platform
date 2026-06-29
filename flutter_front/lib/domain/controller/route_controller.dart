@@ -173,9 +173,9 @@ class RouteController extends ChangeNotifier {
       foregroundTaskOptions: ForegroundTaskOptions(
         // 15초마다 onRepeatEvent → 남은 좌표 버퍼 플러시
         eventAction: ForegroundTaskEventAction.repeat(15000),
-        autoRunOnBoot: false,
-        allowWakeLock: true,
-        allowWifiLock: false,
+        autoRunOnBoot: false, //폰 재부팅시 자동으로 시작 할지
+        allowWakeLock: true,  //화면이 꺼져도 CPU를 때울지
+        allowWifiLock: false, //wifi유지 할지
       ),
     );
   }

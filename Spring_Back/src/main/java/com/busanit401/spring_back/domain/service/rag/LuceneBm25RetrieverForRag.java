@@ -32,8 +32,8 @@ import java.util.Set;
  */
 public class LuceneBm25RetrieverForRag implements ScoringRetrieverForRag, AutoCloseable {
 
-    public static final double DEFAULT_K1 = 1.2;
-    public static final double DEFAULT_B = 0.75;
+    public static final double DEFAULT_K1 = 1.2;    //tf(빈도)계수 표준 기본값   //상한에 수렴(곡선)
+    public static final double DEFAULT_B = 0.75;    //문서길이계수 표준 기본값 //평균대비 보정
 
     private static final String FIELD_ID = "id";
     private static final String FIELD_TEXT = "text";
@@ -66,7 +66,7 @@ public class LuceneBm25RetrieverForRag implements ScoringRetrieverForRag, AutoCl
                 for (ChatBotFaqDocDTO doc : corpus) {
                     Document d = new Document();    //Lucene의 색인 단위
                     d.add(new StringField(FIELD_ID, doc.getId(), Field.Store.YES));  // 저장 + 색인(분석 X)(검색 결과로 돌려줄 id)
-                    d.add(new TextField(FIELD_TEXT, doc.searchableText(), Field.Store.NO)); // Analyzer가 토큰화(빠르게 검색할 대상)("질문 답변"형식의 문자열에서 단어를 추출)
+                    d.add(new TextField(FIELD_TEXT, doc.searchableText(), Field.Store.NO)); // Analyzer가 토큰화(빠르게 검색할 대상)("질문 답변"형식의 문자열에서 단어를 추출)해서 역색인을 만듦(정방향 색인 -> 문서에서 단어 찾음, 역방향 색인 -> 단어가 있는 문서를 찾음)
                     writer.addDocument(d);
 
                 }
@@ -75,7 +75,7 @@ public class LuceneBm25RetrieverForRag implements ScoringRetrieverForRag, AutoCl
             // 2) 검색기 — 같은 BM25 Similarity로 점수 매김
             this.reader = DirectoryReader.open(directory);  //IndexWriter로 만든 휘발성 폴더 열고
             this.searcher = new IndexSearcher(reader);  //추가했던 문서 인덱스 검색자
-            this.searcher.setSimilarity(new BM25Similarity((float) k1, (float) b));
+            this.searcher.setSimilarity(new BM25Similarity((float) k1, (float) b)); //점수를 매길 계수 지정
         } catch (IOException e) {
             throw new UncheckedIOException("Lucene BM25 색인 생성 실패", e);
         }

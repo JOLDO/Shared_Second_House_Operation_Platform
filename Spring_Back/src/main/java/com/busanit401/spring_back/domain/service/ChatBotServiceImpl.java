@@ -49,7 +49,7 @@ public class ChatBotServiceImpl implements ChatBotService {
 
     /** 키와 무관한 조립물(코퍼스·id맵·Lucene 색인). 첫 요청 때 1회 조립 후 재사용. */
     private record Corpus(List<ChatBotFaqDocDTO> docs, Map<String, ChatBotFaqDocDTO> byId, LuceneBm25RetrieverForRag lucene) {}
-    private volatile Corpus cache;   // 멀티스레드 환경에서 최신값 가시성(확인) 보장
+    private volatile Corpus cache;   // 멀티스레드 환경에서 최신값 가시성(확인) 보장(최신값 유지 + 완성된 객체 보장)
 
     @Override
     public List<SearchHit> luceneSearch(String query, int limit) {

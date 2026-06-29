@@ -123,7 +123,7 @@ export default function AccommodationDetailPage() {
             latitude={accommodation.latitude}
             longitude={accommodation.longitude}
             address={accommodation.address}
-            showMap={true}
+            showMap={authed}
           />
 
           <HouseStructure

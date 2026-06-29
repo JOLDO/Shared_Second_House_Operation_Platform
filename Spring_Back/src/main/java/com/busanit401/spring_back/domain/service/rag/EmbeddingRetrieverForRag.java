@@ -33,7 +33,7 @@ public class EmbeddingRetrieverForRag implements ScoringRetrieverForRag {
         this.vectors = new float[n][];
         this.norms = new double[n];
         int d = -1;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++) {   //문서들의 norm값을 계산 해놓음(벡터의 길이[대각선])
             ChatBotFaqDocDTO doc = corpus.get(i);
             float[] emb = doc.getEmbedding();
             if (emb == null || emb.length == 0) {
@@ -82,10 +82,10 @@ public class EmbeddingRetrieverForRag implements ScoringRetrieverForRag {
             double dot = 0.0;
             float[] v = vectors[i]; //각 문서의 벡터
             for (int j = 0; j < v.length; j++) {   // 차원별 곱의 합 = 내적
-                dot += q[j] * v[j];
+                dot += q[j] * v[j]; //차원별 곱의 합을 누적
             }
-            double cosine = dot / (qNorm * norms[i]);
-            if (cosine > 0.0) {
+            double cosine = dot / (qNorm * norms[i]); //차원별 곱(질의, 문서)의 합 누적을 벡터길이로 나눈 코사인 유사도로 점수를 매김
+            if (cosine > 0.0) { //1 -> 유사함, 0 -> 무관, -1 -> 반대
                 scored.add(ChatBotScoredDocDTO.builder().id(ids[i]).score(cosine).build());
             }
         }

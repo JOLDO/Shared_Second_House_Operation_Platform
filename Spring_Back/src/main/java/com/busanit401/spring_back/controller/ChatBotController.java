@@ -74,9 +74,6 @@ public class ChatBotController {
             @RequestParam String q,
             @Parameter(description = "근거로 쓸 FAQ 개수", example = "3")
             @RequestParam(defaultValue = "3") int topK) {
-
-        // /api/** 가 permitAll 이라 토큰이 없으면 userDetails 가 null 일 수 있다.
-        // (SecurityConfig는 건드리지 않음 — JWT가 오면 검증해 식별, 없으면 그대로 통과)
         Long userId = (userDetails != null) ? userDetails.getId() : null;
         log.info("✅ [ChatBotController] RAG 답변 요청 → userId: {}, q: {}", userId, q);
         return chatBotService.answer(q, topK);

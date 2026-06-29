@@ -58,8 +58,8 @@ public class GeminiChatClientForRag {
                         "role", "user",
                         "parts", List.of(Map.of("text", prompt)))),
                 "generationConfig", Map.of(
-                        "temperature", 0.7,
-                        "maxOutputTokens", 2048,
+                        "temperature", 0.7, //창의성
+                        "maxOutputTokens", 2048,    //출력길이 상한
                         // 2.5 Flash는 thinking 토큰이 maxOutputTokens에 포함됨 → FAQ 답변엔 불필요하므로 0으로 꺼서 답변 잘림 방지
                         "thinkingConfig", Map.of("thinkingBudget", 0)));
     }

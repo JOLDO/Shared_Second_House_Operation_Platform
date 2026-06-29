@@ -443,8 +443,8 @@ class _StayAccommodationDetailScreenState extends State<StayAccommodationDetailS
                         zoom: 15,
                       ),
                       markers: _buildMarkers(controller.places, houseLatLng),
-                      myLocationButtonEnabled: false,
-                      mapToolbarEnabled: false,
+                      myLocationButtonEnabled: false, //내 위치로 이동 버튼 숨김
+                      mapToolbarEnabled: false, //내 위치 파란점 숨김
                       onMapCreated: (c) => _mapController = c,
                       // CustomScrollView 안에 있어 부모가 드래그를 가로채므로,
                       // 지도가 제스처를 우선 차지하도록 EagerGestureRecognizer 등록

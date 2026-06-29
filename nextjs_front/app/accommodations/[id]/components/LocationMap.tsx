@@ -25,11 +25,11 @@
  * ==================================================================================
  */
 
-'use client';
+"use client";
 
-import styles from './LocationMap.module.css';
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import styles from "./LocationMap.module.css";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import {
   AdvancedMarker,
   APIProvider,
@@ -39,7 +39,7 @@ import {
   MapControl,
   Pin,
   useMap,
-} from '@vis.gl/react-google-maps';
+} from "@vis.gl/react-google-maps";
 
 interface PlaceDto {
   id: string;
@@ -83,11 +83,11 @@ export default function LocationMap({
         // 내 DB에 저장된 숙소별 맛집 조회 (구글 호출은 백엔드 /sync에서 별도 수행)
         // api.get 이 accessToken 을 Authorization: Bearer 로 자동 첨부 (JWT 인증)
         const data = await api.get<PlaceDto[]>(
-          `/api/places/restaurants?accommodationId=${accommodationId}`
+          `/api/places/restaurants?accommodationId=${accommodationId}`,
         );
         setPlaces(data);
       } catch {
-        setError('맛집 정보를 가져오지 못했어요. 😢');
+        setError("맛집 정보를 가져오지 못했어요. 😢");
       } finally {
         setIsLoading(false);
       }
@@ -108,113 +108,113 @@ export default function LocationMap({
           로그인 후 주변 맛집 지도를 확인할 수 있어요.
         </div>
       ) : (
-      <div className={styles.mapWrap}>
-        {/* 1. API 키 설정 */}
-        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAP_KEY || ''}>
-          {/* 2. 지도 띄우기 */}
-          <Map
-            defaultCenter={{ lat: latitude, lng: longitude }}
-            defaultZoom={15}
-            disableDefaultUI={true} // 기존의 구글 기본 버튼들(로드뷰 등) 한방에 숨기기
-            className={styles.map}
-            mapId={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID || 'DEMO_MAP_ID'}
-            gestureHandling={'greedy'} //인삿말 안하기
-            scrollwheel={false} // 1. 휠로 확대되는 건 끈다! (스크롤 방해 금지)
-            zoomControl={true} // 3. 👈 확대/축소 (+, -) 버튼 딱 이거 하나만 우측 하단에 띄운다!
-          >
-            {/* 🏠 숙소 마커 (파란색으로 강조) */}
-            <AdvancedMarker
-              position={{ lat: latitude, lng: longitude }}
-              title="🏠 숙소"
+        <div className={styles.mapWrap}>
+          {/* 1. API 키 설정 */}
+          <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAP_KEY || ""}>
+            {/* 2. 지도 띄우기 */}
+            <Map
+              defaultCenter={{ lat: latitude, lng: longitude }}
+              defaultZoom={15}
+              disableDefaultUI={true} // 기존의 구글 기본 버튼들(로드뷰 등) 한방에 숨기기
+              className={styles.map}
+              mapId={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID || "DEMO_MAP_ID"}
+              gestureHandling={"greedy"} //한손가락 터치/ 일반 스크롤로 지도 컨트롤
+              scrollwheel={false} // 1. 휠로 확대되는 건 끈다! (스크롤 방해 금지)
+              zoomControl={true} // 3. 👈 확대/축소 (+, -) 버튼 딱 이거 하나만 우측 하단에 띄운다!
             >
-              <Pin
-                background="#4285F4"
-                borderColor="#1a73e8"
-                glyphColor="#ffffff"
-              />
-            </AdvancedMarker>
-
-            {/* 🍽️ 맛집 마커들 — 순위로 색 구분 (상위 빨강 / 10등~ 주황) */}
-            {places.map((p) => {
-              const rank = p.popularityRank;
-              const isTop = rank == null || rank < 10; // 상위(또는 순위 없음)
-              return (
-                <AdvancedMarker
-                  key={p.id}
-                  position={{ lat: p.latitude, lng: p.longitude }}
-                  title={p.name}
-                  onClick={() => setSelectedPlace(p)} // 클릭하면 이 맛집을 선택!
-                >
-                  <Pin
-                    background={isTop ? '#EA4335' : '#FB8C00'}
-                    borderColor={isTop ? '#C5221F' : '#E07B00'}
-                    glyphColor="#ffffff"
-                  />
-                </AdvancedMarker>
-              );
-            })}
-
-            {/* 💬 마커 클릭 시 나타날 말풍선 (InfoWindow) */}
-            {selectedPlace && (
-              <InfoWindow
-                position={{
-                  lat: selectedPlace.latitude,
-                  lng: selectedPlace.longitude,
-                }}
-                onCloseClick={() => setSelectedPlace(null)} // 닫기 버튼 누르면 초기화
+              {/* 🏠 숙소 마커 (파란색으로 강조) */}
+              <AdvancedMarker
+                position={{ lat: latitude, lng: longitude }}
+                title="🏠 숙소"
               >
-                <div
-                  style={{
-                    padding: '4px',
-                    fontSize: '13px',
-                    maxWidth: '220px',
-                    color: '#000',
-                  }}
-                >
-                  <strong>{selectedPlace.name}</strong>
-                  <br />
-                  <span style={{ color: '#555' }}>
-                    {[selectedPlace.primaryType, selectedPlace.phoneNumber]
-                      .filter(Boolean)
-                      .join(' · ') || '상세는 아래 링크에서'}
-                  </span>
-                  <br />
-                  {todayHours(selectedPlace) && (
-                    <>
-                      <TodayHoursLine place={selectedPlace} />
-                      <br />
-                    </>
-                  )}
-                  {selectedPlace.googleMapsUri ? (
-                    <a
-                      href={selectedPlace.googleMapsUri}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: '#23399d', fontWeight: 600 }}
-                    >
-                      구글지도에서 보기 ↗
-                    </a>
-                  ) : (
-                    <span style={{ color: '#888' }}>상세 정보 없음 😢</span>
-                  )}
-                </div>
-              </InfoWindow>
-            )}
-            {/* 🎯 숙소 위치로 돌아오는 버튼 (구글맵 컨트롤 레이어 우상단에 얹는다) */}
-            <MapControl position={ControlPosition.RIGHT_TOP}>
-              <RecenterButton latitude={latitude} longitude={longitude} />
-            </MapControl>
-          </Map>
-        </APIProvider>
+                <Pin
+                  background="#4285F4"
+                  borderColor="#1a73e8"
+                  glyphColor="#ffffff"
+                />
+              </AdvancedMarker>
 
-        {/* 로딩 및 에러 처리 */}
-        {isLoading && (
-          <div className={styles.overlay}>
-            <span className={styles.spinner} />
-          </div>
-        )}
-        {error && !isLoading && <div className={styles.overlay}>{error}</div>}
-      </div>
+              {/* 🍽️ 맛집 마커들 — 순위로 색 구분 (상위 빨강 / 10등~ 주황) */}
+              {places.map((p) => {
+                const rank = p.popularityRank;
+                const isTop = rank == null || rank < 10; // 상위(또는 순위 없음)
+                return (
+                  <AdvancedMarker
+                    key={p.id}
+                    position={{ lat: p.latitude, lng: p.longitude }}
+                    title={p.name}
+                    onClick={() => setSelectedPlace(p)} // 클릭하면 이 맛집을 선택!
+                  >
+                    <Pin
+                      background={isTop ? "#EA4335" : "#FB8C00"}
+                      borderColor={isTop ? "#C5221F" : "#E07B00"}
+                      glyphColor="#ffffff"
+                    />
+                  </AdvancedMarker>
+                );
+              })}
+
+              {/* 💬 마커 클릭 시 나타날 말풍선 (InfoWindow) */}
+              {selectedPlace && (
+                <InfoWindow
+                  position={{
+                    lat: selectedPlace.latitude,
+                    lng: selectedPlace.longitude,
+                  }}
+                  onCloseClick={() => setSelectedPlace(null)} // 닫기 버튼 누르면 초기화
+                >
+                  <div
+                    style={{
+                      padding: "4px",
+                      fontSize: "13px",
+                      maxWidth: "220px",
+                      color: "#000",
+                    }}
+                  >
+                    <strong>{selectedPlace.name}</strong>
+                    <br />
+                    <span style={{ color: "#555" }}>
+                      {[selectedPlace.primaryType, selectedPlace.phoneNumber]
+                        .filter(Boolean)
+                        .join(" · ") || "상세는 아래 링크에서"}
+                    </span>
+                    <br />
+                    {todayHours(selectedPlace) && (
+                      <>
+                        <TodayHoursLine place={selectedPlace} />
+                        <br />
+                      </>
+                    )}
+                    {selectedPlace.googleMapsUri ? (
+                      <a
+                        href={selectedPlace.googleMapsUri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#23399d", fontWeight: 600 }}
+                      >
+                        구글지도에서 보기 ↗
+                      </a>
+                    ) : (
+                      <span style={{ color: "#888" }}>상세 정보 없음 😢</span>
+                    )}
+                  </div>
+                </InfoWindow>
+              )}
+              {/* 🎯 숙소 위치로 돌아오는 버튼 (구글맵 컨트롤 레이어 우상단에 얹는다) */}
+              <MapControl position={ControlPosition.RIGHT_TOP}>
+                <RecenterButton latitude={latitude} longitude={longitude} />
+              </MapControl>
+            </Map>
+          </APIProvider>
+
+          {/* 로딩 및 에러 처리 */}
+          {isLoading && (
+            <div className={styles.overlay}>
+              <span className={styles.spinner} />
+            </div>
+          )}
+          {error && !isLoading && <div className={styles.overlay}>{error}</div>}
+        </div>
       )}
       {/* </div> */}
     </section>
@@ -225,13 +225,13 @@ function todayHours(p: PlaceDto): string | null {
   if (!p.weekdayDescriptions || p.weekdayDescriptions.length === 0) return null;
   // getDay(): 0=일 ~ 6=토
   const days = [
-    '일요일',
-    '월요일',
-    '화요일',
-    '수요일',
-    '목요일',
-    '금요일',
-    '토요일',
+    "일요일",
+    "월요일",
+    "화요일",
+    "수요일",
+    "목요일",
+    "금요일",
+    "토요일",
   ];
   const today = days[new Date().getDay()];
   return p.weekdayDescriptions.find((d) => d.startsWith(today)) ?? null;
@@ -241,15 +241,15 @@ function todayHours(p: PlaceDto): string | null {
 function TodayHoursLine({ place }: { place: PlaceDto }) {
   const hours = todayHours(place);
   if (!hours) return null;
-  const idx = hours.indexOf(':'); // "목요일: 시간들" → 라벨/본문 분리
-  const label = idx >= 0 ? hours.slice(0, idx + 1) : ''; // "목요일:"
+  const idx = hours.indexOf(":"); // "목요일: 시간들" → 라벨/본문 분리
+  const label = idx >= 0 ? hours.slice(0, idx + 1) : ""; // "목요일:"
   const body = (idx >= 0 ? hours.slice(idx + 1) : hours).trim();
-  const ranges = body.split(',').map((r) => r.trim()); // 콤마 제거 + 시간대 분리
+  const ranges = body.split(",").map((r) => r.trim()); // 콤마 제거 + 시간대 분리
 
   return (
-    <span style={{ color: '#1a7f37', display: 'flex' }}>
-      <span style={{ whiteSpace: 'nowrap' }}>🕐 {label}&nbsp;</span>
-      <span style={{ display: 'flex', flexDirection: 'column' }}>
+    <span style={{ color: "#1a7f37", display: "flex" }}>
+      <span style={{ whiteSpace: "nowrap" }}>🕐 {label}&nbsp;</span>
+      <span style={{ display: "flex", flexDirection: "column" }}>
         {ranges.map((r, i) => (
           <span key={i}>{r}</span>
         ))}
@@ -282,19 +282,19 @@ function RecenterButton({
       type="button"
       onClick={handleRecenter}
       style={{
-        margin: '10px',
-        padding: '10px 14px',
-        backgroundColor: '#ffffff',
-        border: 'none',
-        borderRadius: '8px',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: '#333',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
+        margin: "10px",
+        padding: "10px 14px",
+        backgroundColor: "#ffffff",
+        border: "none",
+        borderRadius: "8px",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+        cursor: "pointer",
+        fontSize: "14px",
+        fontWeight: "bold",
+        color: "#333",
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
       }}
     >
       🏠 숙소 위치로
