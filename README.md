@@ -118,46 +118,6 @@ flowchart LR
     W[웹 내 예약] -->|이동경로 보기| WR[예약 기간 경로 지도]
     S -.-> WR
 ```
-
-## 🏗 레이어 구조 (Flutter)
-
-```mermaid
-flowchart TD
-    subgraph Screen["📱 Screen"]
-        S1[GlobalChatbotFab]
-        S2[GuestChatBotScreen]
-        S3[StayAccommodationDetailScreen<br/>GuestRestaurantMapScreen]
-        S4[MainScreen]
-        S5[LiveRouteMapScreen]
-    end
-    subgraph Controller["🧠 Controller (ChangeNotifier)"]
-        C1[ChatBotController]
-        C2[RestaurantController]
-        C3[RouteController]
-    end
-    subgraph Service["🔌 Service"]
-        SV1[ChatBotService]
-        SV2[PlacesService]
-        SV3[RouteService]
-    end
-    subgraph BG["⚙️ Foreground Service isolate"]
-        H[LocationTaskHandler<br/>geolocator + 버퍼]
-    end
-    subgraph API["🌐 API (JWT)"]
-        A1["GET /api/chatBot/chat"]
-        A2["GET /api/places/restaurants"]
-        A3["/api/routes/**"]
-    end
-    S1 --> S2 --> C1 --> SV1 --> A1
-    S3 --> C2 --> SV2 --> A2
-    S4 & S5 --> C3 --> SV3 --> A3
-    C3 -->|start/stop| H
-    H -->|sendDataToMain| C3
-    H -->|묶음 전송| A3
-```
-
-> 🌐 API 계층의 요청 / 응답 형식은 [📡 API 명세](#api-spec) 참고
-
 ---
 
 ## 🐛 트러블슈팅 (Frontend)
@@ -170,19 +130,6 @@ flowchart TD
 | 날짜를 바꿀 때마다 웹 지도가 깜빡이고 초기화됨 | 날짜 변경 시 지도 전체를 다시 마운트 | 지도는 한 번만 마운트, Polyline 객체만 교체 |
 
 ---
-
-## 📂 담당 주요 파일 (Frontend)
-
-| 구분 | 파일 |
-|------|------|
-| Flutter Screen | `common/widget/global_chatbot_fab.dart`, `guest_chat_bot_screen.dart`, `guest_restaurant_map_screen.dart`, `live_route_map_screen.dart`, `main_screen.dart`(이동경로 버튼), `stay_accommodation_detail_screen.dart`(맛집 지도) |
-| Flutter Controller | `chat_bot_controller.dart`, `restaurant_controller.dart`, `route_controller.dart` |
-| Flutter Service | `chat_bot_service.dart`, `places_service.dart`, `route_service.dart`, `service/location_track_handler.dart` |
-| Flutter DTO | `chat_bot_answer_dto.dart`, `place_dto.dart`, `route_dto.dart` |
-| Next.js | `components/FloatingChatbot.tsx`, `components/ChatWindow.tsx`, `components/Navbar.tsx`, `accommodations/[id]/components/LocationMap.tsx`, `my/reservations/components/ReservationRouteMap.tsx` |
-| 설정 | `AndroidManifest.xml`(위치 · 포그라운드 서비스 권한), `local.properties.example`, `.env.example` |
-
-> 📖 RAG 검색기 · 패키지별 역할 상세는 **[Spring_Back/docs/chatbot-rag.md](Spring_Back/docs/chatbot-rag.md)** 참고
 
 ---
 
