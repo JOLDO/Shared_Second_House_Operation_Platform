@@ -29,7 +29,7 @@
 
 | 전역 플로팅 버튼 (웹) | 챗봇 채팅창 (웹) |
 |:---:|:---:|
-| ![웹 챗봇 버튼](docs/taeheun/images/01_chatbot_fab_web.png) | ![웹 챗봇 대화](docs/taeheun/images/02_chatbot_chat_web.png) |
+| ![웹 챗봇 버튼](docs/taeheun/images/01_chatbot_fab_web_v2.png) | ![웹 챗봇 대화](docs/taeheun/images/02_chatbot_chat_web_v2.png) |
 | 우측 하단 💬 버튼, 토큰 검증에 성공한 사용자에게만 노출 | 플로팅 패널 채팅창, 페이지를 이동해도 대화 유지 |
 
 > 🔗 API: [`GET /api/chatBot/chat`](#api-spec) — 단어(BM25) + 의미(임베딩) 융합 검색 후 Gemini가 근거 FAQ만으로 답변 생성 ([RAG 흐름](#rag-flow))
@@ -38,7 +38,7 @@
 
 | 숙소 상세 · 맛집 지도 (앱) | 숙소 상세 · 맛집 지도 (웹) |
 |:---:|:---:|
-| ![앱 맛집 지도](docs/taeheun/images/04_restaurant_map_app.png) | ![웹 맛집 지도](docs/taeheun/images/05_restaurant_map_web.png) |
+| ![앱 맛집 지도](docs/taeheun/images/04_restaurant_map_app.png) | ![웹 맛집 지도](docs/taeheun/images/05_restaurant_map_web_v2.png) |
 | 숙소(파란 마커) 주변 맛집 마커, 탭하면 영업시간 · 전화 · 구글맵 링크 | 상세 페이지의 위치 지도에 주변 맛집 표시 |
 
 > 🔗 API: [`GET /api/places/restaurants`](#api-spec) — 구글을 매번 호출하지 않고 **내 DB에 저장된 맛집**을 인기 상위 10 + 랜덤 5로 응답 ([맛집 수집 흐름](#places-flow))
@@ -47,7 +47,7 @@
 
 | 이동경로 보기 버튼 (앱) | 실시간 추적 (앱) | 예약별 이동경로 (웹) |
 |:---:|:---:|:---:|
-| ![이동경로 버튼](docs/taeheun/images/06_route_button.png) | ![실시간 추적](docs/taeheun/images/07_live_route.png) | ![예약별 경로](docs/taeheun/images/08_reservation_route_web.png) |
+| ![이동경로 버튼](docs/taeheun/images/06_route_button.png) | ![실시간 추적](docs/taeheun/images/07_live_route.png) | ![예약별 경로](docs/taeheun/images/08_reservation_route_web_v2.png) |
 | **예약 기간 중 + 숙소 50m 이내**일 때만 버튼 활성화 | 상시 알림 포그라운드 서비스로 **앱을 내려도 위치 기록**, 폴리라인 실시간 갱신 | 내 예약 카드 아래에서 그 **예약 기간의 경로**를 날짜 칩으로 골라 표시 |
 
 > 🔗 API: [`POST /api/routes/sessions`](#api-spec), [`POST /api/routes/sessions/{id}/points`](#api-spec), [`GET /api/routes/sessions/detail`](#api-spec) ([추적 흐름](#route-flow))
