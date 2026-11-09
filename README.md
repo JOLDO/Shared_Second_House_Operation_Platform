@@ -185,107 +185,6 @@ flowchart LR
 #### 5. 보안 경로 정리
 - `/api/chatBot/**`, `/api/places/**`, `/api/routes/**`는 **로그인 필수**
 
-<a id="api-spec"></a>
-
-### 📡 API 명세
-
-| 기능 | Method | URL | 인증 | 사용 화면 |
-|------|--------|-----|:---:|------|
-| RAG 답변 생성 | GET | `/api/chatBot/chat` | ✅ | 챗봇 (앱 · 웹) |
-| 융합 검색 | GET | `/api/chatBot/fusion` | ✅ | (검색 결과 확인용) |
-| BM25 / 임베딩 단독 검색 | GET | `/api/chatBot/lucene`, `/api/chatBot/embedding` | ✅ | (비교 · 테스트용) |
-| 자동완성 (오타 보정) | GET | `/api/chatBot/suggest` | ✅ | (추천 검색어) |
-| FAQ 단건 | GET | `/api/chatBot/faq/{id}` | ✅ | (추천 검색어 클릭) |
-| 주변 맛집 동기화 | GET | `/api/places/restaurants/sync` | ✅ | (관리 · 스케줄러) |
-| 저장된 맛집 조회 | GET | `/api/places/restaurants` | ✅ | 숙소 상세 지도 |
-| 추적 시작 | POST | `/api/routes/sessions` | ✅ | 실시간 이동경로 |
-| 좌표 묶음 저장 | POST | `/api/routes/sessions/{id}/points` | ✅ | (백그라운드 서비스) |
-| 추적 종료 | POST | `/api/routes/sessions/{id}/end` | ✅ | 실시간 이동경로 |
-| 세션 좌표 조회 | GET | `/api/routes/sessions/{id}/points` | ✅ | 실시간 이동경로 |
-| 세션 이력 | GET | `/api/routes/sessions` | ✅ | — |
-| 기간별 경로 (세션+좌표) | GET | `/api/routes/sessions/detail` | ✅ | 웹 내 예약 |
-
-<details>
-<summary>요청 / 응답 예시</summary>
-
-**RAG 답변**
-```
-GET /api/chatBot/chat?q=반려동물 동반 가능한가요?&topK=3
-Authorization: Bearer {accessToken}
-```
-```json
-{
-  "query": "반려동물 동반 가능한가요?",
-  "answer": "네, 일부 숙소는 반려동물 동반이 가능합니다. ...",
-  "sources": [
-    { "id": "7", "score": 0.94, "question": "반려동물과 함께 입실할 수 있나요?", "answer": "..." }
-  ]
-}
-```
-
-**저장된 맛집 조회**
-```
-GET /api/places/restaurants?accommodationId=1
-```
-```json
-[
-  {
-    "id": "ChIJ...", "accommodationId": 1, "name": "OO식당", "primaryType": "한식",
-    "phoneNumber": "051-000-0000", "latitude": 35.15, "longitude": 129.05,
-    "googleMapsUri": "https://maps.google.com/?cid=...",
-    "weekdayDescriptions": ["월요일: 오전 11:00~오후 9:00", "..."],
-    "popularityRank": 0
-  }
-]
-```
-
-**이동경로**
-```
-POST /api/routes/sessions                 → { "success": true, "sessionId": 3 }
-POST /api/routes/sessions/3/points
-[ { "lat": 35.1587, "lng": 129.1604, "recordedAt": "2026-06-23T14:02:11" }, ... ]
-                                          → { "success": true, "saved": 10 }
-POST /api/routes/sessions/3/end           → { "success": true }
-GET  /api/routes/sessions/detail?from=2026-06-20&to=2026-06-23
-```
-```json
-[ { "sessionId": 3, "startedAt": "2026-06-23T14:00:00", "endedAt": "2026-06-23T15:10:00",
-    "points": [ { "lat": 35.1587, "lng": 129.1604, "recordedAt": "..." } ] } ]
-```
-> 토큰이 없거나 무효하면 `401` → 앱은 "로그인이 필요해요" 안내
-</details>
-
-<a id="rag-flow"></a>
-
-### 🤖 RAG 답변 흐름
-
-```mermaid
-sequenceDiagram
-    participant App as Flutter / Next.js
-    participant S as ChatBotServiceImpl
-    participant L as LuceneBm25Retriever
-    participant E as EmbeddingRetriever
-    participant F as FusionRetriever
-    participant G as Gemini
-
-    App->>S: GET /api/chatBot/chat?q=...
-    Note over S: 코퍼스 + Lucene 색인<br/>첫 요청 때 1회 조립 후 캐시
-    S->>F: fusionSearch(q, topK)
-    F->>L: BM25 검색 (Nori 토큰, poolSize)
-    L-->>F: (id, 점수)
-    F->>E: 임베딩 검색
-    E->>G: 질의 임베딩 (캐시 없을 때만)
-    G-->>E: 1536차원 벡터
-    E-->>F: (id, 코사인 점수)
-    Note over F: 소스별 Min-Max 정규화<br/>0.3 × BM25 + 0.7 × 임베딩
-    F-->>S: 상위 topK FAQ
-    S->>G: 근거 FAQ + 질문 프롬프트 (gemini-2.5-flash)
-    G-->>S: 답변
-    S-->>App: answer + sources
-```
-
-<a id="places-flow"></a>
-
 ### 🍜 맛집 수집 · 조회 흐름
 
 ```mermaid
@@ -302,29 +201,6 @@ flowchart TD
 ```
 
 <a id="route-flow"></a>
-
-### 🗺 이동경로 추적 흐름
-
-```mermaid
-sequenceDiagram
-    participant UI as Flutter UI isolate
-    participant BG as 포그라운드 서비스 isolate
-    participant API as RouteController
-    participant Web as Next.js 내 예약
-
-    UI->>API: POST /api/routes/sessions (JWT)
-    API-->>UI: sessionId
-    UI->>BG: saveData(sessionId, baseUrl, accessToken) + startService
-    loop 50m 이동마다
-        BG->>UI: sendDataToMain(lat, lng) → 폴리라인 갱신
-        BG->>BG: 버퍼에 추가
-    end
-    BG->>API: 10개 쌓이거나 주기마다 POST /points (묶음)
-    Note over BG: 실패 시 버퍼 앞에 되돌려 재시도
-    UI->>API: POST /sessions/{id}/end (남은 버퍼 전송 후)
-    Web->>API: GET /sessions/detail?from=예약시작&to=예약종료
-    API-->>Web: 세션 + 좌표 → Polyline
-```
 
 ### 🗄 DB 관계 (담당 기능 관련)
 
@@ -382,18 +258,6 @@ erDiagram
 | FAQ에 없는 질문에도 그럴듯한 답을 지어냄 | LLM이 근거 밖 지식으로 답변 | 프롬프트에 **근거 자료만 사용 · 없으면 모른다고 안내** 명시 |
 | 요청마다 FAQ 로드 · 색인 생성으로 느림 | 매 요청 코퍼스를 다시 조립 | **첫 요청 1회 조립 후 캐시** (double-checked locking) |
 | 상세 화면 열 때마다 구글 API 비용 발생 | 조회 시마다 Places 호출 | 스케줄러로 DB에 저장, **조회는 DB만** 사용 |
-
-### 📂 담당 주요 파일 (Backend)
-
-| 계층 | 파일 |
-|------|------|
-| Controller | `ChatBotController`, `PlacesController`, `RouteController` |
-| Service | `ChatBotServiceImpl`, `PlacesServiceImpl`, `RouteService` |
-| RAG | `LuceneBm25RetrieverForRag`, `EmbeddingRetrieverForRag`, `FusionRetrieverForRag`, `SuggesterForRag`, `GeminiQueryEmbeddingProviderForRag`, `GeminiEmbeddingClientForRag`, `GeminiChatClientForRag` |
-| Places | `GooglePlacesClient`, `PlacesSyncScheduler`, `PrimaryTypeConverter` |
-| Repository | `ChatBotRepositoryImpl`(JdbcTemplate), `RestaurantRepositoryImpl`(QueryDSL), `RouteSessionRepository`, `RoutePointRepository` |
-| Entity / DTO | `Restaurant`, `RouteSession`, `RoutePoint`, `PlaceDTO`, `RoutePointDTO`, `RouteSessionDetailDTO`, `ChatBotFaqDocDTO` |
-| 기타 | `GoogleConfig`(WebClient), `ChatBotGeminiExceptionHandler`, `VectorParserForChatBot`, `SecurityConfig` |
 
 ---
 
