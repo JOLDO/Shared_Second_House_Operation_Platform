@@ -185,21 +185,6 @@ flowchart LR
 #### 5. 보안 경로 정리
 - `/api/chatBot/**`, `/api/places/**`, `/api/routes/**`는 **로그인 필수**
 
-### 🍜 맛집 수집 · 조회 흐름
-
-```mermaid
-flowchart TD
-    A[매주 월 04:00 스케줄러<br/>또는 /restaurants/sync] --> B{숙소 좌표 있음?}
-    B -->|No| X[건너뜀]
-    B -->|Yes| C[Google Places Nearby Search<br/>반경 2km · 최대 20개 · 인기순]
-    C --> D[기존 행 조회<br/>accommodation_id + place_id IN]
-    D --> E{이미 있음?}
-    E -->|Yes| F[변경 감지로 UPDATE]
-    E -->|No| G[saveAll INSERT]
-    H[GET /api/places/restaurants] --> I[DB에서 인기순 조회]
-    I --> J[상위 10개 + 나머지 랜덤 5개]
-```
-
 <a id="route-flow"></a>
 
 ### 🗄 DB 관계 (담당 기능 관련)
