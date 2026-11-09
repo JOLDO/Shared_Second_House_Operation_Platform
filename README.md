@@ -18,10 +18,19 @@
 
 ### AI 챗봇
 
-| 전역 플로팅 버튼 | 챗봇 대화 (근거 FAQ) | 웹 채팅창 |
-|:---:|:---:|:---:|
-| ![챗봇 버튼](docs/taeheun/images/01_chatbot_fab.png) | ![챗봇 대화](docs/taeheun/images/02_chatbot_chat.png) | ![웹 챗봇](docs/taeheun/images/03_chatbot_web.png) |
-| 어느 화면에서든 따라다니는 💬 버튼, **로그인 상태에서만** 노출 | 질문 → RAG 답변 + 답변 근거가 된 **FAQ를 칩으로 표시** | Next.js 우측 하단 플로팅 패널, 페이지 이동해도 대화 유지 |
+**📱 앱 (Flutter)**
+
+| 전역 플로팅 버튼 (앱) | 챗봇 대화 (앱) |
+|:---:|:---:|
+| ![앱 챗봇 버튼](docs/taeheun/images/01_chatbot_fab_app.png) | ![앱 챗봇 대화](docs/taeheun/images/02_chatbot_chat_app.png) |
+| 어느 화면에서든 따라다니는 💬 버튼, **로그인 상태에서만** 노출 | 질문 → RAG 답변 + 답변 근거가 된 **FAQ를 칩으로 표시** |
+
+**💻 웹 (Next.js)**
+
+| 전역 플로팅 버튼 (웹) | 챗봇 채팅창 (웹) |
+|:---:|:---:|
+| ![웹 챗봇 버튼](docs/taeheun/images/01_chatbot_fab_web.png) | ![웹 챗봇 대화](docs/taeheun/images/02_chatbot_chat_web.png) |
+| 우측 하단 💬 버튼, 토큰 검증에 성공한 사용자에게만 노출 | 플로팅 패널 채팅창, 페이지를 이동해도 대화 유지 |
 
 > 🔗 API: [`GET /api/chatBot/chat`](#api-spec) — 단어(BM25) + 의미(임베딩) 융합 검색 후 Gemini가 근거 FAQ만으로 답변 생성 ([RAG 흐름](#rag-flow))
 
