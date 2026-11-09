@@ -155,13 +155,9 @@ flowchart TD
 
 | 문제 | 원인 | 해결 |
 |------|------|------|
-| 전역 챗봇 버튼에서 챗봇 화면으로 이동이 안 됨 | `MaterialApp.builder`의 context가 Navigator보다 위에 있음 | `GlobalKey<NavigatorState>`로 push |
-| 챗봇 화면 위에 챗봇 버튼이 겹쳐 보임 | 버튼이 라우트 바깥 Stack에 항상 떠 있음 | `ValueNotifier isOpen`으로 열려 있는 동안 숨김 |
 | 로그아웃 후 다른 계정으로 로그인해도 이전 대화가 남음 | 대화가 Provider 메모리에 유지됨 | 로그아웃 · 인증 실패 시 `clear()` |
 | 블랙리스트 처리된 사용자에게도 웹 챗봇 버튼이 보임 | 토큰 존재 여부만으로 로그인 판단 | 경로 변경마다 `/api/users` 호출해 200일 때만 노출 |
-| 백그라운드 추적 중 좌표 전송이 401로 실패 | 포그라운드 서비스 isolate엔 토큰 인터셉터가 없음 | 시작 전에 `accessToken`을 `saveData`로 넘겨 헤더에 직접 첨부 |
 | 가만히 있어도 경로가 지그재그로 그려짐 | GPS 잔떨림 좌표까지 전부 기록 | `distanceFilter: 50` |
-| 숙소 경계에서 이동경로 버튼이 켜졌다 꺼졌다 반복 | 활성/비활성 기준 거리가 같음 | 50m 진입 / 100m 이탈 **히스테리시스** 적용 |
 | 날짜를 바꿀 때마다 웹 지도가 깜빡이고 초기화됨 | 날짜 변경 시 지도 전체를 다시 마운트 | 지도는 한 번만 마운트, Polyline 객체만 교체 |
 
 ---
@@ -212,29 +208,26 @@ flowchart TD
 - 응답에 근거 FAQ(`sources`)를 같이 내려 프론트에서 출처 표시
 
 #### 2. 캐싱 · 비용 절감
-- 코퍼스 · id 맵 · Lucene 색인은 **첫 요청 때 1회 조립 후 캐시** (`volatile` + double-checked locking), 종료 시 `@PreDestroy`로 색인 해제
+- 코퍼스 · id 맵 · Lucene 색인은 **첫 요청 때 1회 조립 후 캐시** (`volatile` + double-checked locking)
 - 같은 질의의 임베딩은 `ConcurrentHashMap.computeIfAbsent`로 캐시 → Gemini 재호출 방지
-- 자동완성은 Lucene `FuzzySuggester`(편집거리)라 **임베딩 · LLM 비용 0**, 오타 · 일부 입력에도 FAQ 후보 제안
 - Gemini 실패는 `ChatBotGeminiApiException` → 전용 핸들러에서 공통 에러 JSON으로 변환
 
 <a id="backend-places"></a>
 
 #### 3. 주변 맛집 수집 (Google Places)
-- 숙소 좌표 중심 반경 2km를 **Places Nearby Search**로 조회 (`X-Goog-FieldMask`로 필요한 필드만 요청)
+- 숙소 좌표 중심 반경 2km를 **Places Nearby Search**로 조회
 - 숙소 FK로 `sh_restaurant`에 저장, **(accommodation_id, place_id) 유니크** 기준 **upsert** — 기존 행은 QueryDSL `IN` 한 번으로 조회 후 **변경 감지로 UPDATE**, 신규만 `saveAll`
 - 구글 응답 순서를 `popularity_rank`로 저장, 업종 코드(`japanese_restaurant`)는 한글 표시명(`일식`)으로 변환
 - 조회 API는 **구글을 호출하지 않고 DB만 사용**: 인기 상위 10개 + 나머지에서 **랜덤 5개** → 매번 조금씩 다른 맛집 노출
 - `PlacesSyncScheduler`: **매주 월요일 04:00(KST)** 전체 숙소 동기화, 숙소마다 **독립 트랜잭션**이라 하나가 실패해도 나머지 계속 진행
 
 #### 4. 이동경로 저장 · 조회
-- 추적 1회 = `sh_route_session` 1행, 좌표는 `sh_route_point`에 **묶음(batch)으로 append**
 - 좌표마다 **기기 측정 시각(`recordedAt`)** 을 저장해 네트워크 지연과 무관하게 순서 보장
 - 웹용 `GET /sessions/detail?from=&to=` — 예약 기간에 시작된 세션 + 좌표를 **한 번에** 반환
-- 사용자는 요청 파라미터가 아닌 **JWT(`@AuthenticationPrincipal`)에서 식별**, principal이 없으면 NPE(500) 대신 **명확한 401**
+- 사용자는 요청 파라미터가 아닌 **JWT(`@AuthenticationPrincipal`)에서 식별**
 
 #### 5. 보안 경로 정리
 - `/api/chatBot/**`, `/api/places/**`, `/api/routes/**`는 **로그인 필수**
-- 테스트용 `/api/**` 전체 허용 규칙보다 **위에** 두어 먼저 매칭되도록 순서 정리, 테스트 경로 제거
 
 <a id="api-spec"></a>
 
@@ -431,13 +424,8 @@ erDiagram
 | 융합 검색 결과가 BM25 쪽으로만 쏠림 | BM25 점수(0\~수십)와 코사인(0\~1) 스케일이 다름 | 소스별 **Min-Max 정규화** 후 가중합 |
 | "강아지 데려가도 되나요?"가 반려동물 FAQ를 못 찾음 | BM25는 단어가 겹쳐야만 매칭 | **임베딩 의미 검색**을 더해 하이브리드로 변경 |
 | FAQ에 없는 질문에도 그럴듯한 답을 지어냄 | LLM이 근거 밖 지식으로 답변 | 프롬프트에 **근거 자료만 사용 · 없으면 모른다고 안내** 명시 |
-| 띄어쓰기가 섞인 오타는 자동완성이 안 됨 | FuzzySuggester가 공백을 사이에 둔 오타를 잘 못 잡음 | 색인 키와 질의 모두 **공백 제거** 후 매칭 |
 | 요청마다 FAQ 로드 · 색인 생성으로 느림 | 매 요청 코퍼스를 다시 조립 | **첫 요청 1회 조립 후 캐시** (double-checked locking) |
-| 맛집을 다시 동기화하면 같은 가게가 중복 저장 | 단순 insert | `(accommodation_id, place_id)` 유니크 + **upsert** |
 | 상세 화면 열 때마다 구글 API 비용 발생 | 조회 시마다 Places 호출 | 스케줄러로 DB에 저장, **조회는 DB만** 사용 |
-| 숙소 하나가 실패하면 전체 동기화가 롤백 | 하나의 트랜잭션으로 묶임 | 서비스 프록시를 통해 **숙소별 독립 트랜잭션** |
-| 비로그인으로 추적 시작 시 500 에러 | principal이 null → NPE | null이면 **401 + 메시지** 반환 |
-| 로그인 필수 API가 비로그인으로도 호출됨 | `/api/**` permitAll이 먼저 매칭 | `authenticated()` 규칙을 **위로** 올려 순서 정리 |
 
 ### 📂 담당 주요 파일 (Backend)
 
